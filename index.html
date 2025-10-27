@@ -101,65 +101,55 @@
   <!-- === JS 載入區（請放在 </body> 前） === -->
   <!-- === JS 載入區（請放在 </body> 前） === -->
   <!-- === JS 載入區（請放在 </body> 前） === -->
+  <!-- === JS 載入區（請放在 </body> 前） === -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const main = document.querySelector("main");
-      main.innerHTML =
-        '<div style="text-align:center;padding:80px 20px;font-size:1.3rem;">🐝 正在載入單字資料...</div>';
+      main.innerHTML = '<div style="text-align:center;padding:80px 20px;font-size:1.3rem;">🐝 正在載入單字資料...</div>';
 
-      // ✅ 自動偵測 GitHub Pages 路徑（本地開發也能正常）
+      // ✅ 偵測在 GitHub Pages 或本地開發
       const repoName = "pierce-wordlist";
-      const basePath = location.hostname.includes("github.io")
-        ? "/" + repoName + "/"
-        : "./";
+      const basePath = location.hostname.includes("github.io") ? `/${repoName}/` : "./";
 
-      // 載入 JS 檔的通用函式
+      // ✅ 動態載入外部 JS
       function loadScript(src) {
         return new Promise((resolve, reject) => {
           const s = document.createElement("script");
           s.src = basePath + src + "?v=" + Date.now();
-          s.onload = resolve;
+          s.onload = () => {
+            console.log("✅ 已載入：" + s.src);
+            resolve();
+          };
           s.onerror = () => reject(new Error("❌ 無法載入 " + s.src));
           document.body.appendChild(s);
         });
       }
 
-      // 多次嘗試載入 weeks.js
-      async function loadWeeksWithRetry(maxRetries = 3) {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try {
-            console.log(`📘 嘗試載入 weeks.js（第 ${attempt} 次）`);
-            await loadScript("wordlists/weeks.js");
-            if (!window.WEEK_LISTS) throw new Error("WEEK_LISTS 未定義");
-            console.log("✅ weeks.js 載入成功");
-            return true;
-          } catch (err) {
-            console.warn("⚠️ 載入失敗：" + err.message);
-            if (attempt === maxRetries) throw err;
-            await new Promise(r => setTimeout(r, 1000));
-          }
-        }
-      }
-
-      // 主流程
-      (async () => {
+      // ✅ 主流程
+      async function startApp() {
         try {
-          await loadWeeksWithRetry();
+          await loadScript("wordlists/weeks.js");
+
+          // 👇 我們要看的這兩行（請保留）
+          console.log("📘 WEEK_LISTS 檢查：", window.WEEK_LISTS ? "OK" : "未定義");
+          document.body.insertAdjacentHTML('beforeend', `<div style="position:fixed;bottom:20px;left:20px;color:#fff;background:#222;padding:8px 12px;border-radius:6px;z-index:9999;">WEEK_LISTS：${window.WEEK_LISTS ? '✅ 已載入' : '❌ 未定義'}</div>`);
+
+          if (!window.WEEK_LISTS) throw new Error("WEEK_LISTS 未定義");
+
           await loadScript("fireworks.js");
           await loadScript("storage.js");
           await loadScript("main.js");
 
           const loading = document.querySelector("main div");
           if (loading) loading.remove();
-          console.log("✅ 所有腳本載入完成！");
+          console.log("✅ 所有腳本載入完成");
         } catch (err) {
-          main.innerHTML =
-            '<div style="text-align:center;padding:80px 20px;color:#f88;font-size:1.2rem;">⚠️ 載入失敗：' +
-            err.message +
-            '<br>請重新整理或稍後再試。</div>';
           console.error(err);
+          main.innerHTML = `<div style="text-align:center;padding:80px 20px;color:#f88;">⚠️ 載入失敗：${err.message}<br>請重新整理。</div>`;
         }
-      })();
+      }
+
+      startApp();
     });
   </script>
 </body>
