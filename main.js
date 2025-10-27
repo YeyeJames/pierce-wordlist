@@ -77,18 +77,43 @@ function initLogin() {
 }
 
 // === 週次清單 ===
+// === 生成週次清單 ===
 function generateWeeks() {
-  const weeksContainer = document.getElementById("weeks");
-  weeksContainer.innerHTML = "";
+  console.log("🔧 開始生成週次按鈕...");
 
-  Object.keys(WEEK_LISTS).forEach(weekNum => {
-    const words = WEEK_LISTS[weekNum];
+  const weekContainer = document.getElementById("weeks");
+  if (!weekContainer) {
+    console.error("❌ 找不到 #weeks 容器！");
+    return;
+  }
+
+  weekContainer.innerHTML = ""; // 清空舊內容
+
+  if (!window.WEEK_LISTS || Object.keys(window.WEEK_LISTS).length === 0) {
+    weekContainer.innerHTML = "<p style='color:#ccc;'>❌ 找不到單字資料。</p>";
+    console.warn("⚠️ WEEK_LISTS 為空");
+    return;
+  }
+
+  const weekNumbers = Object.keys(window.WEEK_LISTS)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  weekNumbers.forEach((week) => {
+    const words = window.WEEK_LISTS[week] || [];
     const btn = document.createElement("button");
     btn.className = "week-btn";
-    btn.textContent = `Week ${weekNum} — ${words.length} words`;
-    btn.addEventListener("click", () => openTrainer(parseInt(weekNum)));
-    weeksContainer.appendChild(btn);
+    btn.textContent = `Week ${week} — ${words.length} words`;
+
+    btn.addEventListener("click", () => {
+      console.log(`▶️ 開啟 Week ${week}`);
+      alert(`開啟 Week ${week}（目前僅測試按鈕反應）`);
+    });
+
+    weekContainer.appendChild(btn);
   });
+
+  console.log(`✅ 已生成 ${weekNumbers.length} 週按鈕`);
 }
 
 // === 開啟拼字訓練 ===
