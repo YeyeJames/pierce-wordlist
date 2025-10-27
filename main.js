@@ -234,6 +234,37 @@ document.getElementById("btn-back").addEventListener("click", () => {
   document.getElementById("trainer").classList.add("hidden");
   document.getElementById("menu").classList.remove("hidden");
 });
+// === 🧱 產生週次按鈕 ===
+function generateWeeks() {
+  const weeksContainer = document.getElementById("weeks");
+  if (!weeksContainer) {
+    console.log("❌ 找不到 #weeks 元素");
+    return;
+  }
+
+  weeksContainer.innerHTML = ""; // 清空
+
+  const weekKeys = Object.keys(window.WEEK_LISTS || {});
+  if (weekKeys.length === 0) {
+    console.log("⚠️ 沒有任何週次資料");
+    return;
+  }
+
+  weekKeys.forEach(weekNum => {
+    const words = window.WEEK_LISTS[weekNum] || [];
+    const btn = document.createElement("button");
+    btn.className = "week-btn";
+    btn.textContent = `Week ${weekNum} — ${words.length} words`;
+
+    btn.addEventListener("click", () => {
+      alert(`開啟 Week ${weekNum}（共 ${words.length} 單字）`);
+    });
+
+    weeksContainer.appendChild(btn);
+  });
+
+  console.log(`🎯 已生成所有週次按鈕，共 ${weekKeys.length} 週。`);
+}
 // === 除錯顯示 ===
 setTimeout(() => {
   console.log("🐝 除錯檢查開始");
