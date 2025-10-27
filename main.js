@@ -1,5 +1,5 @@
-// === 🐝 Pierce Spelling Bee — Final Stable v20251029 ===
-// 完整整合：登入、商店、週次按鈕、幣值、煙火、錄音
+// === 🐝 Pierce Spelling Bee — Never Missing Buttons Edition v20251029 ===
+// 維哲專用強化版：週次按鈕保證生成、支援登入/幣值/商店/錄音/煙火
 // -------------------------------------------------------
 
 console.log("🐝 Pierce Spelling Bee Loaded (v20251029)");
@@ -15,27 +15,38 @@ let currentWords = [];
 document.addEventListener("DOMContentLoaded", () => {
   initLogin();
   initStore();
-  generateWeeks();
+  safeGenerateWeeks();
   bindTrainerButtons();
   bindRecorderButtons();
 });
 
-// === 🧱 生成週次按鈕 ===
-function generateWeeks() {
+// === 🧱 永不錯過的週次生成 ===
+function safeGenerateWeeks(attempt = 1) {
   const container = document.getElementById("weeks");
+  const maxRetry = 10;
+
   if (!container) {
-    console.error("❌ #weeks 不存在！");
+    console.warn(`⚠️ #weeks 尚未出現，延遲重試 (${attempt}/${maxRetry})`);
+    if (attempt < maxRetry) setTimeout(() => safeGenerateWeeks(attempt + 1), 500);
     return;
   }
 
+  // 確保有資料
+  if (!window.WEEK_LISTS || Object.keys(window.WEEK_LISTS).length === 0) {
+    console.warn("⚠️ WEEK_LISTS 尚未載入，等待中...");
+    setTimeout(() => safeGenerateWeeks(attempt + 1), 500);
+    return;
+  }
+
+  generateWeeks();
+}
+
+// === 🧩 生成週次按鈕 ===
+function generateWeeks() {
+  const container = document.getElementById("weeks");
   container.innerHTML = "";
 
   const weekKeys = Object.keys(window.WEEK_LISTS || {});
-  if (!weekKeys.length) {
-    console.warn("⚠️ WEEK_LISTS 為空");
-    return;
-  }
-
   weekKeys.forEach(num => {
     const words = window.WEEK_LISTS[num] || [];
     const btn = document.createElement("button");
@@ -45,7 +56,7 @@ function generateWeeks() {
     container.appendChild(btn);
   });
 
-  console.log(`✅ 已生成 ${weekKeys.length} 週按鈕`);
+  console.log(`✅ 已生成 ${weekKeys.length} 個週次按鈕`);
 }
 
 // === 👤 登入系統 ===
@@ -295,7 +306,7 @@ function bindRecorderButtons() {
   if (btnStop) btnStop.addEventListener("click", stopRecording);
 }
 
-// === ✅ 除錯標記 ===
+// === ✅ 除錯提示 ===
 setTimeout(() => {
   const tag = document.createElement("div");
   tag.style = `
@@ -304,6 +315,6 @@ setTimeout(() => {
     font-family: monospace; font-size: 0.8rem;
     padding: 6px 10px; border-radius: 6px; z-index: 9999;
   `;
-  tag.innerHTML = `🟢 main.js 已載入（${Date.now()}）<br>✅ WEEK_LISTS = ${Object.keys(window.WEEK_LISTS || {}).length} 週`;
+  tag.innerHTML = `🟢 main.js 已載入 (${Date.now()})<br>✅ 自動週次生成啟動`;
   document.body.appendChild(tag);
 }, 1000);
