@@ -1,10 +1,102 @@
-pierce-spelling-bee/
-├── index.html
-├── styles.css
-├── main.js
-├── wordlists/
-│   └── weeks.js
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
-└── README.md
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pierce Spelling Bee</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Spelling Bee — <span class="brand">Pierce Edition</span></h1>
+    <div class="user-panel">
+      <div id="login-area">
+        <input id="username" placeholder="輸入名字登入" />
+        <button id="btn-login">登入</button>
+      </div>
+      <div id="profile-area" class="hidden">
+        <span>Hi, <b id="profile-name"></b> ✨</span>
+        <span class="coins">🪙 <b id="coin-balance">0</b></span>
+        <button id="btn-store">商店</button>
+        <button id="btn-logout" class="ghost">登出</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="menu">
+      <h2>選擇週次</h2>
+      <div id="weeks" class="week-grid"></div>
+    </section>
+
+    <section id="trainer" class="hidden">
+      <div class="trainer-header">
+        <button id="btn-back" class="ghost">← 返回</button>
+        <h3 id="trainer-title">Week ?</h3>
+        <div class="progress">
+          <span id="progress-info">0/0</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="prompt">
+          <button id="btn-speak">🔊 朗讀單字</button>
+          <button id="btn-hint" class="ghost">💡 提示</button>
+          <div id="hint" class="hint hidden"></div>
+        </div>
+
+        <div class="input-row">
+          <input id="answer" placeholder="輸入拼字…" autocomplete="off" />
+          <button id="btn-submit">確認</button>
+        </div>
+
+        <div id="feedback" class="feedback"></div>
+        <div class="controls">
+          <button id="btn-next" class="hidden">下一題 →</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="store-modal">
+    <form method="dialog" class="store">
+      <header>
+        <h3>單字幣商店</h3>
+        <span>餘額：🪙 <b id="store-balance">0</b></span>
+      </header>
+      <div class="store-items">
+        <div class="item">
+          <div class="item-info">
+            <h4>🎆 煙火特效</h4>
+            <p>答對後放煙火慶祝！</p>
+          </div>
+          <div class="item-cta">
+            <span class="price">🪙 50</span>
+            <button data-buy="fireworks">購買</button>
+            <span class="owned hidden">已擁有 ✓</span>
+          </div>
+        </div>
+        <div class="item">
+          <div class="item-info">
+            <h4>🎤 語音增強包</h4>
+            <p>解鎖更自然的語速與音效</p>
+          </div>
+          <div class="item-cta">
+            <span class="price">🪙 30</span>
+            <button data-buy="voicepack">購買</button>
+            <span class="owned hidden">已擁有 ✓</span>
+          </div>
+        </div>
+      </div>
+      <footer>
+        <button class="ghost">關閉</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <canvas id="fx" class="hidden"></canvas>
+
+  <script src="wordlists/weeks.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
