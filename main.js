@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // === 🧱 產生週次按鈕 ===
+// === 🧱 產生週次按鈕 ===
 function generateWeeks() {
   const weeksContainer = document.getElementById("weeks");
   if (!weeksContainer) {
@@ -36,10 +37,14 @@ function generateWeeks() {
     btn.className = "week-btn";
     btn.textContent = `Week ${num} — ${words.length} words`;
 
+    // 綁定週次點擊事件
     btn.addEventListener("click", () => startTraining(num));
-    weeksContainer.appendChild(btn); // ✅ 必須加這行
+
+    // ✅ 關鍵：一定要加上這行才能真正顯示
+    weeksContainer.appendChild(btn);
   });
 
+  // ✅ 這行才是整個 function 的結尾
   console.log(`🎯 已生成所有週次按鈕，共 ${weekKeys.length} 週。`);
 }
 // === 👤 登入系統 ===
