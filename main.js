@@ -1,6 +1,6 @@
 // main.js
-import { launchFireworks } from "./fireworks.js";
-import { Storage } from "./storage.js";
+const { launchFireworks } = window;
+const { Storage } = window;
 
 const usernameInput = document.getElementById("username");
 const loginBtn = document.getElementById("btn-login");
@@ -29,10 +29,8 @@ let currentList = [];
 let currentIndex = 0;
 let correctCount = 0;
 
-// 初始化
 if (profile.name) updateProfileUI();
 
-// 登入
 loginBtn.onclick = () => {
   const name = usernameInput.value.trim();
   if (!name) return alert("請輸入名字！");
@@ -41,7 +39,6 @@ loginBtn.onclick = () => {
   updateProfileUI();
 };
 
-// 登出
 logoutBtn.onclick = () => {
   localStorage.removeItem("profile");
   location.reload();
@@ -55,7 +52,6 @@ function updateProfileUI() {
   renderWeeks();
 }
 
-// 產生週次按鈕
 function renderWeeks() {
   weeksContainer.innerHTML = "";
   for (const week in window.WEEK_LISTS) {
@@ -72,7 +68,6 @@ function renderWeeks() {
   }
 }
 
-// 開始週次
 function startWeek(week) {
   currentWeek = week;
   currentList = [...window.WEEK_LISTS[week]];
@@ -111,20 +106,15 @@ function handleCorrect() {
   feedback.textContent = "✅ 答對！+1 單字幣";
   feedback.style.color = "green";
 
-  // 金幣 +1
   profile.coins = (profile.coins || 0) + 1;
   coinDisplay.textContent = profile.coins;
   Storage.saveProfile(profile);
 
-  // 成績更新
   correctCount++;
   Storage.saveProgress(currentWeek, { correct: correctCount });
 
-  // 特效（如已購買）
-  if (profile.items?.fireworks) {
-    const rect = trainer.getBoundingClientRect();
-    launchFireworks(rect.width / 2, rect.top + 100);
-  }
+  const rect = trainer.getBoundingClientRect();
+  launchFireworks(rect.width / 2, rect.top + 100);
 
   nextBtn.classList.remove("hidden");
   submitBtn.disabled = true;
@@ -144,19 +134,16 @@ nextBtn.onclick = () => {
   }
 };
 
-// 顯示提示
 hintBtn.onclick = () => {
   hintBox.classList.toggle("hidden");
 };
 
-// 返回主選單
 backBtn.onclick = () => {
   trainer.classList.add("hidden");
   document.getElementById("menu").classList.remove("hidden");
   renderWeeks();
 };
 
-// 語音朗讀
 speakBtn.onclick = () => {
   const word = currentList[currentIndex].word;
   const utter = new SpeechSynthesisUtterance(word);
@@ -164,7 +151,6 @@ speakBtn.onclick = () => {
   window.speechSynthesis.speak(utter);
 };
 
-// 商店
 storeBtn.onclick = () => {
   storeBalance.textContent = profile.coins;
   storeModal.showModal();
