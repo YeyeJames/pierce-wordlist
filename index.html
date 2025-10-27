@@ -98,45 +98,45 @@
   <!-- ✅ JS 載入區（請放在 </body> 前） -->
   <!-- 先載入單字週次資料 -->
   <!-- === JS 載入區（請放在 </body> 前） === -->
+  <!-- === JS 載入區（請放在 </body> 前） === -->
   <script>
-    // 動態載入 weeks.js，確保順序正確
-    function loadWeeks(callback) {
-      const script = document.createElement("script");
-      script.src = "wordlists/weeks.js?v=" + Date.now(); // 防快取
-      script.onload = callback;
-      script.onerror = () => {
-        alert("❌ 無法載入單字列表（weeks.js）");
-      };
-      document.head.appendChild(script);
-    }
-
-    // 預設載入提示畫面
+    // 🐝 顯示載入畫面
     document.addEventListener("DOMContentLoaded", () => {
       const main = document.querySelector("main");
       main.innerHTML =
         '<div style="text-align:center;padding:80px 20px;font-size:1.3rem;">🐝 正在載入單字資料...</div>';
 
-      // 嘗試載入 weeks.js
-      loadWeeks(() => {
-        if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
-          console.log("✅ WEEK_LISTS 載入成功，共 " + Object.keys(window.WEEK_LISTS).length + " 週。");
+      // 取得路徑基底（可在本機或 GitHub Pages 都能正確）
+      const base = location.pathname.includes("pierce-wordlist") ? "/pierce-wordlist" : "";
 
-          // 再載入其他腳本
-          const files = ["fireworks.js", "storage.js", "main.js"];
-          files.forEach(src => {
-            const s = document.createElement("script");
-            s.src = src + "?v=" + Date.now();
-            document.body.appendChild(s);
-          });
-        } else {
-          alert("⚠️ 單字資料未定義，請檢查 weeks.js 是否語法錯誤！");
+      // 動態載入 JS 檔案的函式
+      function loadScript(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = base + "/" + src + "?v=" + Date.now(); // 防快取
+          s.onload = resolve;
+          s.onerror = () => reject(new Error("❌ 無法載入 " + src));
+          document.body.appendChild(s);
+        });
+      }
+
+      // 順序載入腳本（確保 weeks.js 完成後才執行 main.js）
+      (async () => {
+        try {
+          await loadScript("wordlists/weeks.js");
+          if (!window.WEEK_LISTS) throw new Error("WEEK_LISTS 未定義（weeks.js 錯誤）");
+
+          await loadScript("fireworks.js");
+          await loadScript("storage.js");
+          await loadScript("main.js");
+
+          console.log("✅ 所有腳本載入完成！");
+        } catch (err) {
+          alert(err.message);
+          console.error(err);
         }
-      });
+      })();
     });
   </script>
-  <script src="wordlists/weeks.js"></script>
-<script src="fireworks.js"></script>
-<script src="storage.js"></script>
-<script src="main.js"></script>
 </body>
 </html>
