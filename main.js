@@ -1,3 +1,32 @@
+document.addEventListener("DOMContentLoaded", () => {
+  // 等待 WEEK_LISTS 載入
+  const wait = setInterval(() => {
+    if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
+      clearInterval(wait);
+      console.log("✅ WEEK_LISTS 已載入，共", Object.keys(window.WEEK_LISTS).length, "週");
+      generateWeeks();
+    }
+  }, 500);
+});
+
+// 生成週次按鈕
+function generateWeeks() {
+  const weeksContainer = document.getElementById("weeks");
+  if (!weeksContainer) return;
+  weeksContainer.innerHTML = "";
+
+  Object.entries(window.WEEK_LISTS).forEach(([week, list]) => {
+    const btn = document.createElement("button");
+    btn.className = "week-btn";
+    btn.textContent = `Week ${week} — ${list.length} words`;
+    btn.addEventListener("click", () => {
+      alert(`開啟 Week ${week}`);
+    });
+    weeksContainer.appendChild(btn);
+  });
+
+  console.log("🎯 已生成所有週次按鈕");
+}
 // === Pierce Spelling Bee — Final Stable v20251028 ===
 // by 維哲專用版
 console.log("🟢 main.js loaded (v20251028)");
