@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pierce Spelling Bee</title>
 
-  <!-- ✅ 自動附版本參數，避免快取 -->
+  <!-- 🐝 自動避免快取 -->
   <script>
-    const VER = new Date().toISOString().slice(0,10).replace(/-/g, "");
+    const VER = Date.now(); // 每次開啟都帶新時間戳
     document.write(`<link rel="stylesheet" href="styles.css?v=${VER}" />`);
   </script>
 </head>
@@ -102,48 +102,41 @@
 
   <canvas id="fx" class="hidden"></canvas>
 
-  <!-- ✅ JS 自動載入控制 -->
+  <!-- 🐝 自動載入 JS -->
   <script>
-    const JS_VERSION = new Date().toISOString().slice(0,10).replace(/-/g, "");
+    const JS_VERSION = Date.now(); // 防快取版本號
+    const scripts = ["wordlists/weeks.js", "fireworks.js", "storage.js", "main.js"];
 
-    function loadScript(src, callback) {
+    const loading = document.createElement("div");
+    loading.id = "loading-status";
+    loading.style = `
+      position: fixed; bottom: 10px; left: 10px;
+      background: rgba(0,0,0,0.7); color: #0f0;
+      font-family: monospace; padding: 6px 10px; border-radius: 5px;
+      font-size: 0.85rem; z-index: 9999;
+    `;
+    loading.textContent = "🐝 正在載入...";
+    document.body.appendChild(loading);
+
+    // 依序載入腳本
+    function loadScript(i = 0) {
+      if (i >= scripts.length) {
+        loading.textContent = `🟢 所有 JS 已載入 (${JS_VERSION})`;
+        return;
+      }
       const s = document.createElement("script");
-      s.src = `${src}?v=${JS_VERSION}`;
-      s.onload = callback;
+      s.src = `${scripts[i]}?v=${JS_VERSION}`;
+      s.onload = () => {
+        loading.textContent = `✅ 已載入 ${scripts[i]}`;
+        loadScript(i + 1);
+      };
       s.onerror = () => {
-        console.error("❌ 無法載入：", src);
-        const el = document.getElementById("loading-status");
-        if (el) el.textContent = `❌ 無法載入 ${src}`;
+        loading.textContent = `❌ 無法載入 ${scripts[i]}`;
       };
       document.body.appendChild(s);
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const loading = document.createElement("div");
-      loading.id = "loading-status";
-      loading.style = `
-        position: fixed; bottom: 10px; left: 10px;
-        background: rgba(0,0,0,0.7); color: #0f0;
-        font-family: monospace; padding: 6px 10px; border-radius: 5px;
-        font-size: 0.85rem; z-index: 9999;
-      `;
-      loading.textContent = "🐝 正在載入單字資料...";
-      document.body.appendChild(loading);
-
-      loadScript("wordlists/weeks.js", () => {
-        console.log("✅ weeks.js 已載入，共週數：", Object.keys(window.WEEK_LISTS || {}).length);
-        loading.textContent = "✅ WEEK_LISTS 已載入";
-
-        loadScript("fireworks.js", () => {
-          loadScript("storage.js", () => {
-            loadScript("main.js", () => {
-              console.log("✅ main.js 已載入完成");
-              loading.textContent = `🟢 main.js 已載入 (${JS_VERSION})`;
-            });
-          });
-        });
-      });
-    });
+    document.addEventListener("DOMContentLoaded", () => loadScript());
   </script>
 </body>
 </html>
