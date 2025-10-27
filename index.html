@@ -4,8 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pierce Spelling Bee</title>
-  <link rel="stylesheet" href="styles.css?v=20251027_5" />
+
+  <!-- ✅ 自動附版本參數，避免快取 -->
+  <script>
+    const VER = new Date().toISOString().slice(0,10).replace(/-/g, "");
+    document.write(`<link rel="stylesheet" href="styles.css?v=${VER}" />`);
+  </script>
 </head>
+
 <body>
   <header class="topbar">
     <h1>Spelling Bee — <span class="brand">Pierce Edition</span></h1>
@@ -96,11 +102,22 @@
 
   <canvas id="fx" class="hidden"></canvas>
 
-  <!-- === 🐝 JS 載入控制區 === -->
+  <!-- ✅ JS 自動載入控制 -->
   <script>
-    const JS_VERSION = "20251027_7";
+    const JS_VERSION = new Date().toISOString().slice(0,10).replace(/-/g, "");
 
-    // 顯示載入提示
+    function loadScript(src, callback) {
+      const s = document.createElement("script");
+      s.src = `${src}?v=${JS_VERSION}`;
+      s.onload = callback;
+      s.onerror = () => {
+        console.error("❌ 無法載入：", src);
+        const el = document.getElementById("loading-status");
+        if (el) el.textContent = `❌ 無法載入 ${src}`;
+      };
+      document.body.appendChild(s);
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       const loading = document.createElement("div");
       loading.id = "loading-status";
@@ -112,31 +129,16 @@
       `;
       loading.textContent = "🐝 正在載入單字資料...";
       document.body.appendChild(loading);
-    });
 
-    // 動態載入 function
-    function loadScript(src, callback) {
-      const s = document.createElement("script");
-      s.src = src + "?v=" + JS_VERSION;
-      s.onload = callback;
-      s.onerror = () => {
-        console.error("❌ 無法載入：", src);
-        document.getElementById("loading-status").textContent = `❌ 無法載入 ${src}`;
-      };
-      document.body.appendChild(s);
-    }
-
-    // 載入順序控制
-    document.addEventListener("DOMContentLoaded", () => {
       loadScript("wordlists/weeks.js", () => {
         console.log("✅ weeks.js 已載入，共週數：", Object.keys(window.WEEK_LISTS || {}).length);
-        document.getElementById("loading-status").textContent = "✅ WEEK_LISTS 已載入";
+        loading.textContent = "✅ WEEK_LISTS 已載入";
 
         loadScript("fireworks.js", () => {
           loadScript("storage.js", () => {
             loadScript("main.js", () => {
               console.log("✅ main.js 已載入完成");
-              document.getElementById("loading-status").textContent = `🟢 main.js 已載入 (${JS_VERSION})`;
+              loading.textContent = `🟢 main.js 已載入 (${JS_VERSION})`;
             });
           });
         });
