@@ -11,10 +11,28 @@ let currentIndex = 0;
 let purchased = { fireworks: false, voicepack: false };
 
 // === 初始化 ===
+// === 初始化 ===
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("🚀 main.js DOMContentLoaded 觸發");
   initLogin();
   initStore();
-  generateWeeks();
+
+  // 保護檢查 WEEK_LISTS
+  if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
+    console.log("✅ 偵測到 WEEK_LISTS，生成週次");
+    generateWeeks();
+  } else {
+    console.warn("⚠️ WEEK_LISTS 尚未載入，將延遲啟動 generateWeeks()");
+
+    // 若一開始沒載到，就每 1 秒檢查一次直到成功
+    const timer = setInterval(() => {
+      if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
+        console.log("✅ WEEK_LISTS 延遲載入成功，生成週次");
+        generateWeeks();
+        clearInterval(timer);
+      }
+    }, 1000);
+  }
 });
 
 // === 登入與使用者資料 ===
