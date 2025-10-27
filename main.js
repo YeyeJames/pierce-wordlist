@@ -293,3 +293,46 @@ function stopRecording() {
     mediaRecorder.stop();
   }
 }
+
+// === 🎤 錄音功能（iOS Safari 相容版） ===
+let mediaRecorder;
+let recordedChunks = [];
+let isRecording = false;
+
+// 錄音開始
+async function startRecording() {
+  if (isRecording) return alert("⏺️ 已在錄音中！");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    recordedChunks = [];
+    isRecording = true;
+
+    mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+
+    mediaRecorder.onstop = () => {
+      isRecording = false;
+      const blob = new Blob(recordedChunks, { type: "audio/webm" });
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play(); // 🔊 自動播放錄音結果
+      alert("🎧 錄音完成！已播放剛剛的錄音。");
+    };
+
+    mediaRecorder.start();
+    alert("🎙️ 開始錄音中...（請講出單字）");
+  } catch (err) {
+    console.error("🎤 錄音錯誤：", err);
+    alert("⚠️ 無法啟動錄音，請確認：\n1️⃣ 已允許麥克風權限\n2️⃣ 網站是 HTTPS（GitHub Pages 可用）");
+  }
+}
+
+// 停止錄音
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    isRecording = false;
+  } else {
+    alert("ℹ️ 尚未開始錄音");
+  }
+}
