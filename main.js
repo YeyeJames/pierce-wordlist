@@ -113,7 +113,8 @@ function generateWeeks() {
     weekContainer.appendChild(btn);
   });
 
-  console.log(`✅ 已生成 ${weekNumbers.length} 週按鈕`);
+console.log(`✅ 已生成 ${weekNumbers.length} 週按鈕`);
+console.log("📋 weekContainer 內容：", weekContainer.innerHTML);
 }
 
 // === 開啟拼字訓練 ===
