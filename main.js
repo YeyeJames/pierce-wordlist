@@ -1,5 +1,6 @@
 // === Pierce Spelling Bee — Final Stable v20251028 ===
-// Author: 維哲專用版（自動偵測 + 週次生成 + 動態載入版）
+// Author: 維哲專用版（支援中英單字 + GitHub Pages 優化）
+// 功能：登入、商店、週次自動生成、答題系統、煙火特效、語音朗讀
 
 console.log("🐝 Pierce Spelling Bee Main Loaded v20251028");
 
@@ -11,16 +12,15 @@ let wordIndex = 0;
 let words = [];
 let purchased = { fireworks: false, voicepack: false };
 
-// === 頁面載入後 ===
+// === 頁面載入後執行 ===
 document.addEventListener("DOMContentLoaded", () => {
   console.log("📘 DOM 已載入，準備初始化...");
-
   initLogin();
   initStore();
-  waitForWeeks(); // 等待 weeks.js 載入
+  waitForWeeks(); // 等待 weeks.js 載入後再生成週次
 });
 
-// === 等待 weeks.js 載入完成後生成週次 ===
+// === 等待 weeks.js 載入完成 ===
 function waitForWeeks() {
   const menu = document.getElementById("menu");
   const weeksContainer = document.getElementById("weeks");
@@ -36,21 +36,32 @@ function waitForWeeks() {
   }, 400);
 }
 
-// === 生成週次按鈕 ===
+// === 生成週次按鈕（支援 word/meaning 格式） ===
 function generateWeeks() {
   const weeksContainer = document.getElementById("weeks");
   if (!weeksContainer) return;
 
   weeksContainer.innerHTML = "";
+
   Object.entries(window.WEEK_LISTS).forEach(([week, list]) => {
+    const count = Array.isArray(list) ? list.length : 0;
+
     const btn = document.createElement("button");
     btn.className = "week-btn";
-    btn.textContent = `Week ${week} — ${list.length} words`;
-    btn.addEventListener("click", () => startWeek(week));
+    btn.textContent = `Week ${week} — ${count} words`;
+
+    btn.addEventListener("click", () => {
+      if (count === 0) {
+        alert(`Week ${week} 還沒有單字喔 🐝`);
+        return;
+      }
+      startWeek(week);
+    });
+
     weeksContainer.appendChild(btn);
   });
 
-  console.log("🎯 已生成所有週次按鈕");
+  console.log("🎯 已生成所有週次按鈕，共", Object.keys(window.WEEK_LISTS).length, "週。");
 }
 
 // === 登入系統 ===
@@ -98,7 +109,7 @@ function initLogin() {
   });
 }
 
-// === 商店 ===
+// === 商店系統 ===
 function initStore() {
   const modal = document.getElementById("store-modal");
   const btnStore = document.getElementById("btn-store");
@@ -156,7 +167,7 @@ function showWord() {
   const feedback = document.getElementById("feedback");
   const hintBox = document.getElementById("hint");
   const btnNext = document.getElementById("btn-next");
-  const word = words[wordIndex];
+  const currentItem = words[wordIndex];
 
   progress.textContent = `${wordIndex + 1} / ${words.length}`;
   feedback.textContent = "";
@@ -164,11 +175,11 @@ function showWord() {
   answerInput.value = "";
   btnNext.classList.add("hidden");
 
-  // 朗讀
-  speakWord(word);
+  // 朗讀單字
+  speakWord(currentItem.word);
 }
 
-// === 朗讀 ===
+// === 語音朗讀 ===
 function speakWord(word) {
   if (!word) return;
   const utter = new SpeechSynthesisUtterance(word);
@@ -183,17 +194,17 @@ document.addEventListener("click", e => {
     const ans = document.getElementById("answer").value.trim().toLowerCase();
     const feedback = document.getElementById("feedback");
     const btnNext = document.getElementById("btn-next");
-    const word = words[wordIndex].toLowerCase();
+    const correctWord = words[wordIndex].word.toLowerCase();
 
-    if (ans === word) {
-      feedback.textContent = "✅ 正確！";
+    if (ans === correctWord) {
+      feedback.textContent = `✅ 正確！(${words[wordIndex].meaning})`;
       feedback.style.color = "#3fa34d";
       coins += 1;
       localStorage.setItem("beeCoins", coins);
       document.getElementById("coin-balance").textContent = coins;
       if (purchased.fireworks) launchFireworks();
     } else {
-      feedback.textContent = `❌ 錯誤，正確拼法是 ${word}`;
+      feedback.textContent = `❌ 錯誤，正確拼法是 ${correctWord}（${words[wordIndex].meaning}）`;
       feedback.style.color = "#ff5555";
     }
     btnNext.classList.remove("hidden");
@@ -213,7 +224,7 @@ document.addEventListener("click", e => {
 // === 顯示提示 ===
 document.getElementById("btn-hint").addEventListener("click", () => {
   const hint = document.getElementById("hint");
-  const word = words[wordIndex];
+  const word = words[wordIndex].word;
   hint.textContent = `提示：開頭是 ${word[0].toUpperCase()}...`;
   hint.classList.remove("hidden");
 });
