@@ -233,6 +233,8 @@ document.getElementById("btn-next").addEventListener("click", () => {
 document.getElementById("btn-back").addEventListener("click", () => {
   document.getElementById("trainer").classList.add("hidden");
   document.getElementById("menu").classList.remove("hidden");
+  document.getElementById("btn-record").addEventListener("click", startRecording);
+document.getElementById("btn-stop").addEventListener("click", stopRecording);
 });
 
 // 更新進度條
