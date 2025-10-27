@@ -24,7 +24,6 @@ function generateWeeks() {
   }
 
   weeksContainer.innerHTML = ""; // 清空
-
   const weekKeys = Object.keys(window.WEEK_LISTS || {});
   if (weekKeys.length === 0) {
     console.log("⚠️ 沒有任何週次資料");
@@ -37,11 +36,12 @@ function generateWeeks() {
     btn.className = "week-btn";
     btn.textContent = `Week ${num} — ${words.length} words`;
 
-btn.addEventListener("click", () => startTraining(num));
+    btn.addEventListener("click", () => startTraining(num));
+    weeksContainer.appendChild(btn); // ✅ 必須加這行
+  });
 
   console.log(`🎯 已生成所有週次按鈕，共 ${weekKeys.length} 週。`);
 }
-
 // === 👤 登入系統 ===
 function initLogin() {
   const loginArea = document.getElementById("login-area");
@@ -252,7 +252,3 @@ function speakWord(word) {
   speechSynthesis.speak(utter);
 }
 
-// 🔄 修改週次按鈕：連動訓練模式
-document.querySelectorAll(".week-btn").forEach(btn => {
-  btn.addEventListener("click", () => startTraining(num));
-});
