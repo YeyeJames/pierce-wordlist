@@ -1,8 +1,8 @@
-// === Pierce Spelling Bee — Integrated Final Edition ===
-// Author: 維哲專用版 (2025-10-27)
+// === Pierce Spelling Bee — Fixed Visible Build (2025-10-27) ===
+// 整合：登入、商店、中文解釋、朗讀、煙火、週次修正
+console.log("🟢 main.js loaded");
 
-console.log("🟢 Pierce Spelling Bee 主程式載入成功");
-
+// === 全域變數 ===
 let currentUser = null;
 let coins = 0;
 let currentWeek = null;
@@ -11,31 +11,35 @@ let currentIndex = 0;
 let purchased = { fireworks: false, voicepack: false };
 
 // === 初始化 ===
-// === 初始化 ===
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("🚀 main.js DOMContentLoaded 觸發");
+  console.log("🚀 DOM Ready");
+
+  // 保證 menu 顯示
+  const menu = document.getElementById("menu");
+  if (menu) menu.classList.remove("hidden");
+  const weeksContainer = document.getElementById("weeks");
+  if (weeksContainer) weeksContainer.style.display = "block";
+
   initLogin();
   initStore();
 
-  // 保護檢查 WEEK_LISTS
+  // 等待 WEEK_LISTS 可用
   if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
-    console.log("✅ 偵測到 WEEK_LISTS，生成週次");
+    console.log("✅ WEEK_LISTS ready");
     generateWeeks();
   } else {
-    console.warn("⚠️ WEEK_LISTS 尚未載入，將延遲啟動 generateWeeks()");
-
-    // 若一開始沒載到，就每 1 秒檢查一次直到成功
+    console.warn("⚠️ WEEK_LISTS not ready, retrying...");
     const timer = setInterval(() => {
       if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
-        console.log("✅ WEEK_LISTS 延遲載入成功，生成週次");
+        console.log("✅ WEEK_LISTS detected (delayed)");
         generateWeeks();
         clearInterval(timer);
       }
-    }, 1000);
+    }, 800);
   }
 });
 
-// === 登入與使用者資料 ===
+// === 登入系統 ===
 function initLogin() {
   const loginArea = document.getElementById("login-area");
   const profileArea = document.getElementById("profile-area");
@@ -76,48 +80,49 @@ function initLogin() {
   });
 }
 
-// === 週次清單 ===
-// === 生成週次清單 ===
+// === 生成週次 ===
 function generateWeeks() {
-  console.log("🔧 開始生成週次按鈕...");
+  console.log("🔧 Generating week buttons...");
 
   const weekContainer = document.getElementById("weeks");
   if (!weekContainer) {
-    console.error("❌ 找不到 #weeks 容器！");
+    console.error("❌ No #weeks element found");
     return;
   }
 
-  weekContainer.innerHTML = ""; // 清空舊內容
+  weekContainer.innerHTML = "";
+  weekContainer.style.display = "grid";
+  weekContainer.style.gridTemplateColumns = "repeat(auto-fill, minmax(160px, 1fr))";
+  weekContainer.style.gap = "12px";
 
-  if (!window.WEEK_LISTS || Object.keys(window.WEEK_LISTS).length === 0) {
-    weekContainer.innerHTML = "<p style='color:#ccc;'>❌ 找不到單字資料。</p>";
-    console.warn("⚠️ WEEK_LISTS 為空");
+  const weekNumbers = Object.keys(window.WEEK_LISTS || {}).map(Number).sort((a, b) => a - b);
+  if (weekNumbers.length === 0) {
+    weekContainer.innerHTML = "<p style='color:#ccc;'>❌ 沒有單字資料。</p>";
     return;
   }
 
-  const weekNumbers = Object.keys(window.WEEK_LISTS)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  weekNumbers.forEach((week) => {
-    const words = window.WEEK_LISTS[week] || [];
+  weekNumbers.forEach(week => {
+    const list = window.WEEK_LISTS[week];
     const btn = document.createElement("button");
     btn.className = "week-btn";
-    btn.textContent = `Week ${week} — ${words.length} words`;
-
-    btn.addEventListener("click", () => {
-      console.log(`▶️ 開啟 Week ${week}`);
-      alert(`開啟 Week ${week}（目前僅測試按鈕反應）`);
-    });
-
+    btn.textContent = `Week ${week} — ${list.length} words`;
+    btn.style.cssText = `
+      background:#2a3b6a;
+      color:white;
+      border:none;
+      border-radius:8px;
+      padding:12px;
+      font-size:1rem;
+      cursor:pointer;
+    `;
+    btn.addEventListener("click", () => openTrainer(week));
     weekContainer.appendChild(btn);
   });
 
-console.log(`✅ 已生成 ${weekNumbers.length} 週按鈕`);
-console.log("📋 weekContainer 內容：", weekContainer.innerHTML);
+  console.log(`✅ 已生成 ${weekNumbers.length} 週按鈕`);
 }
 
-// === 開啟拼字訓練 ===
+// === 開啟拼字畫面 ===
 function openTrainer(weekNum) {
   currentWeek = weekNum;
   words = WEEK_LISTS[weekNum];
@@ -130,9 +135,9 @@ function openTrainer(weekNum) {
 
   document.getElementById("menu").classList.add("hidden");
   document.getElementById("trainer").classList.remove("hidden");
-
   document.getElementById("trainer-title").textContent = `Week ${weekNum}`;
   document.getElementById("progress-info").textContent = `1 / ${words.length}`;
+
   showWord();
 }
 
@@ -156,37 +161,35 @@ function showWord() {
   document.getElementById("btn-submit").onclick = () => checkAnswer(wordData);
 }
 
-// === 語音朗讀 ===
+// === 朗讀 ===
 function speakWord(word) {
-  const utterance = new SpeechSynthesisUtterance(word);
-  if (purchased.voicepack) utterance.rate = 0.9;
-  else utterance.rate = 0.8;
-  speechSynthesis.speak(utterance);
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = "en-US";
+  utter.rate = purchased.voicepack ? 0.9 : 0.8;
+  speechSynthesis.speak(utter);
 }
 
-// === 檢查答案 ===
+// === 判斷對錯 ===
 function checkAnswer(wordData) {
-  const answer = document.getElementById("answer").value.trim().toLowerCase();
+  const ans = document.getElementById("answer").value.trim().toLowerCase();
   const feedback = document.getElementById("feedback");
-  const correctWord = wordData.word.toLowerCase();
+  const correct = wordData.word.toLowerCase();
 
-  if (answer === correctWord) {
+  if (ans === correct) {
     feedback.innerHTML = `✅ 正確！<br>${wordData.word} — ${wordData.meaning}`;
-    coins += 2; // 答對 +2 幣
+    coins += 2;
     localStorage.setItem("beeCoins", coins);
     document.getElementById("coin-balance").textContent = coins;
-
     if (purchased.fireworks) launchFireworks();
-
-    nextButton(true);
+    nextButton();
   } else {
-    feedback.innerHTML = `❌ 錯誤，正確拼法是 <b>${wordData.word}</b>`;
-    nextButton(false);
+    feedback.innerHTML = `❌ 錯誤！正確拼法是 <b>${wordData.word}</b>`;
+    nextButton();
   }
 }
 
 // === 下一題 ===
-function nextButton(success) {
+function nextButton() {
   const btnNext = document.getElementById("btn-next");
   btnNext.classList.remove("hidden");
   btnNext.onclick = () => {
@@ -196,8 +199,7 @@ function nextButton(success) {
       alert(`🎉 本週完成！共 ${words.length} 題`);
       document.getElementById("trainer").classList.add("hidden");
       document.getElementById("menu").classList.remove("hidden");
-      localStorage.setItem("beeCoins", coins);
-      document.getElementById("coin-balance").textContent = coins;
+      generateWeeks();
     } else {
       document.getElementById("progress-info").textContent = `${currentIndex + 1} / ${words.length}`;
       showWord();
@@ -208,38 +210,35 @@ function nextButton(success) {
 // === 商店 ===
 function initStore() {
   const btnStore = document.getElementById("btn-store");
-  const storeModal = document.getElementById("store-modal");
-  const storeBalance = document.getElementById("store-balance");
-  const buttons = storeModal.querySelectorAll("[data-buy]");
+  const modal = document.getElementById("store-modal");
+  const bal = document.getElementById("store-balance");
+  const items = modal.querySelectorAll("[data-buy]");
 
   btnStore.addEventListener("click", () => {
-    storeBalance.textContent = coins;
-    storeModal.showModal();
+    bal.textContent = coins;
+    modal.showModal();
   });
 
-  buttons.forEach(btn => {
+  items.forEach(btn => {
     btn.addEventListener("click", e => {
       e.preventDefault();
       const item = btn.getAttribute("data-buy");
       const cost = item === "fireworks" ? 50 : 30;
-      if (coins < cost) {
-        alert("💰 單字幣不足！");
-        return;
-      }
+      if (coins < cost) return alert("💰 單字幣不足！");
       coins -= cost;
       purchased[item] = true;
       localStorage.setItem("beeCoins", coins);
       localStorage.setItem("beeItems", JSON.stringify(purchased));
+      bal.textContent = coins;
+      document.getElementById("coin-balance").textContent = coins;
       btn.nextElementSibling.classList.remove("hidden");
       btn.remove();
-      storeBalance.textContent = coins;
-      document.getElementById("coin-balance").textContent = coins;
       alert(`✅ 購買成功：${item === "fireworks" ? "煙火特效" : "語音增強包"}`);
     });
   });
 }
 
-// === 煙火特效 ===
+// === 煙火 ===
 function launchFireworks() {
   const fx = document.getElementById("fx");
   fx.classList.remove("hidden");
@@ -247,15 +246,18 @@ function launchFireworks() {
   fx.width = window.innerWidth;
   fx.height = window.innerHeight;
 
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 25; i++) {
     const x = Math.random() * fx.width;
     const y = Math.random() * fx.height / 2;
-    const r = Math.random() * 4 + 2;
+    const r = Math.random() * 3 + 2;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2 * Math.PI);
-    ctx.fillStyle = `hsl(${Math.random() * 360}, 100%, 60%)`;
+    ctx.fillStyle = `hsl(${Math.random() * 360},100%,60%)`;
     ctx.fill();
   }
 
-  setTimeout(() => ctx.clearRect(0, 0, fx.width, fx.height), 800);
+  setTimeout(() => {
+    ctx.clearRect(0, 0, fx.width, fx.height);
+    fx.classList.add("hidden");
+  }, 800);
 }
