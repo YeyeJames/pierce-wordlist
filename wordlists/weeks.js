@@ -678,4 +678,4 @@ window.WEEK_LISTS = {
     { word: "spots", meaning: "斑點" },
     { word: "whole", meaning: "全部的" }
   ]
-};
+}
