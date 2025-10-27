@@ -37,12 +37,7 @@ function generateWeeks() {
     btn.className = "week-btn";
     btn.textContent = `Week ${num} — ${words.length} words`;
 
-    btn.addEventListener("click", () => {
-      alert(`開啟 Week ${num}（共 ${words.length} 單字）`);
-    });
-
-    weeksContainer.appendChild(btn);
-  });
+btn.addEventListener("click", () => startTraining(num));
 
   console.log(`🎯 已生成所有週次按鈕，共 ${weekKeys.length} 週。`);
 }
