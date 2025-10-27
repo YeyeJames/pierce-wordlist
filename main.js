@@ -1,52 +1,44 @@
-// === Pierce Spelling Bee — Final Stable v20251028 ===
-// Author: 維哲專用最終整合版（支援自動生成週次 + 商店 + 登入）
-// -----------------------------------------------------
+// === 🐝 Pierce Spelling Bee — Final Stable v20251028 ===
+// Author: 維哲專用版（整合登入、商店、錄音、煙火、幣值）
+// -------------------------------------------------------
 
 console.log("🐝 Pierce Spelling Bee Loaded (v20251028)");
 
 let currentUser = null;
 let coins = 0;
 let purchased = { fireworks: false, voicepack: false };
+let currentWeek = null;
+let currentIndex = 0;
+let currentWords = [];
 
 // === 初始化 ===
 document.addEventListener("DOMContentLoaded", () => {
   initLogin();
-  generateWeeks();
   initStore();
+  generateWeeks();
+  bindRecorderButtons();
 });
 
 // === 🧱 產生週次按鈕 ===
-// === 🧱 產生週次按鈕 ===
 function generateWeeks() {
   const weeksContainer = document.getElementById("weeks");
-  if (!weeksContainer) {
-    console.log("❌ 找不到 #weeks 元素");
-    return;
-  }
+  if (!weeksContainer) return console.warn("❌ #weeks not found");
 
-  weeksContainer.innerHTML = ""; // 清空
+  weeksContainer.innerHTML = "";
   const weekKeys = Object.keys(window.WEEK_LISTS || {});
-  if (weekKeys.length === 0) {
-    console.log("⚠️ 沒有任何週次資料");
-    return;
-  }
 
   weekKeys.forEach(num => {
     const words = window.WEEK_LISTS[num] || [];
     const btn = document.createElement("button");
     btn.className = "week-btn";
     btn.textContent = `Week ${num} — ${words.length} words`;
-
-    // 綁定週次點擊事件
     btn.addEventListener("click", () => startTraining(num));
-
-    // ✅ 關鍵：一定要加上這行才能真正顯示
     weeksContainer.appendChild(btn);
   });
 
-  // ✅ 這行才是整個 function 的結尾
-  console.log(`🎯 已生成所有週次按鈕，共 ${weekKeys.length} 週。`);
+  console.log(`✅ 已生成 ${weekKeys.length} 週`);
 }
+
 // === 👤 登入系統 ===
 function initLogin() {
   const loginArea = document.getElementById("login-area");
@@ -111,6 +103,7 @@ function initStore() {
         coins -= cost;
         purchased[item] = true;
         localStorage.setItem("beeCoins", coins);
+        document.getElementById("coin-balance").textContent = coins;
         alert(`✅ 購買成功：${item}`);
         balance.textContent = coins;
       } else {
@@ -120,44 +113,7 @@ function initStore() {
   });
 }
 
-// === 🎆 測試煙火效果 ===
-function playFireworks() {
-  if (!purchased.fireworks) return;
-  const fx = document.getElementById("fx");
-  fx.classList.remove("hidden");
-  fx.style.background = "radial-gradient(circle, #ff0, #f00, transparent)";
-  setTimeout(() => fx.classList.add("hidden"), 800);
-}
-
-// === 🐞 除錯模式（開發用） ===
-setTimeout(() => {
-  const overlay = document.createElement("div");
-  overlay.style = `
-    position: fixed; bottom: 5px; left: 5px;
-    background: rgba(0,0,0,0.85); color: #0f0;
-    font-family: monospace; font-size: 0.8rem;
-    padding: 6px 10px; border-radius: 6px; z-index: 9999;
-  `;
-  overlay.innerHTML = `
-  🟢 main.js 已載入（${Date.now()}）<br>
-  ✅ WEEK_LISTS = ${Object.keys(window.WEEK_LISTS || {}).length} 週
-  `;
-  document.body.appendChild(overlay);
-
-  if (typeof generateWeeks === "function") {
-    console.log("🟢 generateWeeks 存在，立即執行");
-    generateWeeks();
-  } else {
-    console.log("❌ generateWeeks 未定義");
-  }
-}, 1000);
-
 // === 🐝 拼字訓練系統 ===
-let currentWeek = null;
-let currentIndex = 0;
-let currentWords = [];
-
-// 點擊週次按鈕 → 進入訓練模式
 function startTraining(weekNum) {
   currentWeek = weekNum;
   currentWords = window.WEEK_LISTS[weekNum] || [];
@@ -171,7 +127,7 @@ function startTraining(weekNum) {
   showWord();
 }
 
-// 顯示目前題目（遮字拼音）
+// === 顯示題目 ===
 function showWord() {
   const feedback = document.getElementById("feedback");
   const hintBox = document.getElementById("hint");
@@ -193,8 +149,7 @@ function showWord() {
   };
 }
 
-// 確認答案
-// === 🧠 確認答案 ===
+// === 確認答案 ===
 document.getElementById("btn-submit").addEventListener("click", () => {
   const wordObj = currentWords[currentIndex];
   const input = document.getElementById("answer").value.trim().toLowerCase();
@@ -206,9 +161,11 @@ document.getElementById("btn-submit").addEventListener("click", () => {
   if (input === wordObj.word.toLowerCase()) {
     feedback.innerHTML = `✅ 正確！ (${wordObj.word})<br><span style="color:#ccc;">${wordObj.meaning}</span>`;
     feedback.style.color = "#0f0";
+
     coins += 1;
     localStorage.setItem("beeCoins", coins);
     document.getElementById("coin-balance").textContent = coins;
+
     playFireworks();
   } else {
     feedback.innerHTML = `❌ 錯了，正確拼法是：<b>${wordObj.word}</b><br><span style="color:#ccc;">${wordObj.meaning}</span>`;
@@ -218,7 +175,7 @@ document.getElementById("btn-submit").addEventListener("click", () => {
   nextBtn.classList.remove("hidden");
 });
 
-// 下一題
+// === 下一題 ===
 document.getElementById("btn-next").addEventListener("click", () => {
   currentIndex++;
   if (currentIndex < currentWords.length) {
@@ -229,28 +186,26 @@ document.getElementById("btn-next").addEventListener("click", () => {
   }
 });
 
-// 返回主選單
+// === 返回主畫面 ===
 document.getElementById("btn-back").addEventListener("click", () => {
   document.getElementById("trainer").classList.add("hidden");
   document.getElementById("menu").classList.remove("hidden");
-  document.getElementById("btn-record").addEventListener("click", startRecording);
-document.getElementById("btn-stop").addEventListener("click", stopRecording);
 });
 
-// 更新進度條
+// === 更新進度 ===
 function updateProgress() {
   const progress = document.getElementById("progress-info");
   progress.textContent = `${currentIndex + 1}/${currentWords.length}`;
 }
 
-// 結束週次
+// === 結束週次 ===
 function endTraining() {
   alert(`🎉 恭喜完成 Week ${currentWeek}！`);
   document.getElementById("trainer").classList.add("hidden");
   document.getElementById("menu").classList.remove("hidden");
 }
 
-// 語音朗讀
+// === 語音朗讀 ===
 function speakWord(word) {
   if (!word) return;
   const utter = new SpeechSynthesisUtterance(word);
@@ -260,46 +215,35 @@ function speakWord(word) {
   speechSynthesis.speak(utter);
 }
 
-// === 🎤 錄音比對功能 ===
-let mediaRecorder;
-let recordedChunks = [];
+// === 🎆 煙火特效 ===
+function playFireworks() {
+  const fx = document.getElementById("fx");
+  if (!fx) return;
 
-async function startRecording() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-    recordedChunks = [];
+  fx.classList.remove("hidden");
+  fx.style.display = "block";
+  fx.style.position = "fixed";
+  fx.style.top = 0;
+  fx.style.left = 0;
+  fx.style.width = "100vw";
+  fx.style.height = "100vh";
+  fx.style.zIndex = 999;
+  fx.style.pointerEvents = "none";
+  fx.style.background = `radial-gradient(circle at ${Math.random()*100}% ${Math.random()*100}%, hsl(${Math.random()*360},100%,60%) 10%, transparent 70%)`;
+  fx.style.transition = "opacity 1s ease";
+  fx.style.opacity = 1;
 
-    mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
-    mediaRecorder.onstop = async () => {
-      const blob = new Blob(recordedChunks, { type: "audio/webm" });
-      const url = URL.createObjectURL(blob);
-
-      const audio = new Audio(url);
-      audio.play(); // 🔊 自動播放剛錄的音
-      alert("🎧 錄音完成，可自行聆聽比對發音。");
-    };
-
-    mediaRecorder.start();
-    alert("🎙️ 開始錄音（再次點擊「停止錄音」即可結束）");
-  } catch (err) {
-    alert("❌ 無法啟動錄音，請確認已允許麥克風權限。");
-    console.error(err);
-  }
+  setTimeout(() => {
+    fx.style.opacity = 0;
+    setTimeout(() => fx.classList.add("hidden"), 800);
+  }, 800);
 }
 
-function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state === "recording") {
-    mediaRecorder.stop();
-  }
-}
-
-// === 🎤 錄音功能（iOS Safari 相容版） ===
+// === 🎤 錄音功能 ===
 let mediaRecorder;
 let recordedChunks = [];
 let isRecording = false;
 
-// 錄音開始
 async function startRecording() {
   if (isRecording) return alert("⏺️ 已在錄音中！");
   try {
@@ -309,25 +253,23 @@ async function startRecording() {
     isRecording = true;
 
     mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
-
     mediaRecorder.onstop = () => {
       isRecording = false;
       const blob = new Blob(recordedChunks, { type: "audio/webm" });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      audio.play(); // 🔊 自動播放錄音結果
-      alert("🎧 錄音完成！已播放剛剛的錄音。");
+      audio.play();
+      alert("🎧 錄音完成並播放。");
     };
 
     mediaRecorder.start();
-    alert("🎙️ 開始錄音中...（請講出單字）");
+    alert("🎙️ 錄音開始，請說出單字！");
   } catch (err) {
-    console.error("🎤 錄音錯誤：", err);
-    alert("⚠️ 無法啟動錄音，請確認：\n1️⃣ 已允許麥克風權限\n2️⃣ 網站是 HTTPS（GitHub Pages 可用）");
+    console.error(err);
+    alert("⚠️ 無法啟動錄音，請允許麥克風權限。");
   }
 }
 
-// 停止錄音
 function stopRecording() {
   if (mediaRecorder && isRecording) {
     mediaRecorder.stop();
@@ -336,3 +278,23 @@ function stopRecording() {
     alert("ℹ️ 尚未開始錄音");
   }
 }
+
+function bindRecorderButtons() {
+  const btnRec = document.getElementById("btn-record");
+  const btnStop = document.getElementById("btn-stop");
+  if (btnRec) btnRec.addEventListener("click", startRecording);
+  if (btnStop) btnStop.addEventListener("click", stopRecording);
+}
+
+// === ✅ 除錯標記 ===
+setTimeout(() => {
+  const overlay = document.createElement("div");
+  overlay.style = `
+    position: fixed; bottom: 5px; left: 5px;
+    background: rgba(0,0,0,0.85); color: #0f0;
+    font-family: monospace; font-size: 0.8rem;
+    padding: 6px 10px; border-radius: 6px; z-index: 9999;
+  `;
+  overlay.innerHTML = `🟢 main.js 已載入（${Date.now()}）<br>✅ WEEK_LISTS = ${Object.keys(window.WEEK_LISTS || {}).length} 週`;
+  document.body.appendChild(overlay);
+}, 1000);
