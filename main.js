@@ -261,3 +261,43 @@ function launchFireworks() {
     fx.classList.add("hidden");
   }, 800);
 }
+
+// === 🧩 診斷顯示 ===
+setTimeout(() => {
+  const diag = document.createElement("div");
+  diag.style.position = "fixed";
+  diag.style.bottom = "50px";
+  diag.style.left = "10px";
+  diag.style.background = "rgba(0,0,0,0.8)";
+  diag.style.color = "#0f0";
+  diag.style.fontFamily = "monospace";
+  diag.style.padding = "8px 10px";
+  diag.style.fontSize = "0.85rem";
+  diag.style.borderRadius = "6px";
+  diag.style.zIndex = 9999;
+
+  let report = "";
+
+  // 檢查 WEEK_LISTS 狀態
+  if (window.WEEK_LISTS) {
+    const count = Object.keys(window.WEEK_LISTS).length;
+    report += `✅ WEEK_LISTS ${count} 週\n`;
+  } else {
+    report += "❌ WEEK_LISTS 未載入\n";
+  }
+
+  // 檢查 DOM
+  const menu = document.getElementById("menu");
+  const weeks = document.getElementById("weeks");
+  report += menu ? "✅ #menu 存在\n" : "❌ #menu 不存在\n";
+  report += weeks ? `✅ #weeks 存在 (${weeks.children.length} 子項)\n` : "❌ #weeks 不存在\n";
+
+  // 檢查顯示狀態
+  if (weeks) {
+    const style = getComputedStyle(weeks);
+    report += `顯示狀態：display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity}`;
+  }
+
+  diag.textContent = report;
+  document.body.appendChild(diag);
+}, 1500);
