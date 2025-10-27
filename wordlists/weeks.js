@@ -116,9 +116,8 @@ window.WEEK_LISTS = {
     { word: "miss", meaning: "想念；錯過" },
     { word: "nice", meaning: "好的；親切的" },
     { word: "steps", meaning: "步驟；樓梯" },
-    { word: "terrible", meaning: "可怕的；糟糕的" }
-  ]
-
+    { word: "terrible", meaning: "可怕的；糟糕],
+],
 
   4: [
     { word: "knee", meaning: "膝蓋" },
