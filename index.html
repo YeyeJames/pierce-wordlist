@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pierce Spelling Bee</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20251027_4" />
 </head>
 <body>
   <header class="topbar">
@@ -95,53 +95,68 @@
   </dialog>
 
   <canvas id="fx" class="hidden"></canvas>
-  <!-- ✅ JS 載入區（請放在 </body> 前） -->
-  <!-- 先載入單字週次資料 -->
-  <!-- === JS 載入區（請放在 </body> 前） === -->
-  <!-- === JS 載入區（請放在 </body> 前） === -->
-  <!-- === JS 載入區（請放在 </body> 前） === -->
-  <!-- === JS 載入區（請放在 </body> 前） === -->
-  <!-- === JS 載入區（請放在 </body> 前） === -->
-<!-- === Pierce Spelling Bee – Static Safe Loader === -->
-<script src="wordlists/weeks.js?v=20251027b"></script>
 
-<script>
-  console.log("🐝 Pierce Spelling Bee 安全啟動");
+  <!-- === 🐝 JS 載入控制區 === -->
+  <script>
+    // === 防快取版本號 ===
+    const JS_VERSION = "20251027_4";
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const main = document.querySelector("main");
-    const weeksContainer = document.getElementById("weeks");
-    main.innerHTML = `
-      <section id="menu">
-        <h2>選擇週次</h2>
-        <div id="weeks" class="week-grid"></div>
-      </section>
-    `;
-
-    if (!window.WEEK_LISTS) {
-      main.innerHTML += `<p style="text-align:center;color:#f66;">❌ 無法載入 weeks.js</p>`;
-      return;
-    }
-
-    const container = document.getElementById("weeks");
-    Object.entries(WEEK_LISTS).forEach(([week, list]) => {
-      const btn = document.createElement("button");
-      btn.className = "week-btn";
-      btn.textContent = `Week ${week} — ${list.length} words`;
-      btn.addEventListener("click", () => {
-        alert("開啟 Week " + week + "（目前僅測試按鈕反應）");
-      });
-      container.appendChild(btn);
+    // 顯示載入提示
+    document.addEventListener("DOMContentLoaded", () => {
+      const loading = document.createElement("div");
+      loading.id = "loading-status";
+      loading.style = `
+        position: fixed; bottom: 10px; left: 10px;
+        background: rgba(0,0,0,0.6); color: #0f0;
+        font-family: monospace; padding: 6px 10px; border-radius: 5px;
+        font-size: 0.9rem; z-index: 9999;
+      `;
+      loading.textContent = "🐝 正在載入週次資料...";
+      document.body.appendChild(loading);
     });
 
-    const info = document.createElement("div");
-    info.style.position = "fixed";
-    info.style.bottom = "10px";
-    info.style.left = "10px";
-    info.style.color = "#0f0";
-    info.textContent = `✅ WEEK_LISTS 已載入 (${Object.keys(WEEK_LISTS).length} 週)`;
-    document.body.appendChild(info);
-  });
-</script>
+    // === 動態載入 weeks.js ===
+    function loadWeeks(callback) {
+      const script = document.createElement("script");
+      script.src = "wordlists/weeks.js?v=" + JS_VERSION;
+      script.onload = () => {
+        document.getElementById("loading-status").textContent = "✅ WEEK_LISTS 已載入";
+        callback && callback();
+      };
+      script.onerror = () => {
+        document.getElementById("loading-status").textContent = "❌ 無法載入 weeks.js";
+        alert("⚠️ 載入 weeks.js 失敗，請檢查檔案位置。");
+      };
+      document.head.appendChild(script);
+    }
+
+    // === 載入主程式 ===
+    function loadScripts() {
+      const scripts = ["fireworks.js", "storage.js", "main.js"];
+      scripts.forEach((src, i) => {
+        const s = document.createElement("script");
+        s.src = src + "?v=" + JS_VERSION;
+        s.onload = () => {
+          if (i === scripts.length - 1) {
+            document.getElementById("loading-status").textContent =
+              `🟢 main.js 已載入 (${JS_VERSION})`;
+          }
+        };
+        document.body.appendChild(s);
+      });
+    }
+
+    // === 初始化 ===
+    document.addEventListener("DOMContentLoaded", () => {
+      loadWeeks(() => {
+        if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
+          console.log("✅ WEEK_LISTS 載入成功，共 " + Object.keys(window.WEEK_LISTS).length + " 週。");
+          loadScripts();
+        } else {
+          alert("⚠️ 單字資料未定義，請檢查 weeks.js 是否語法錯誤！");
+        }
+      });
+    });
+  </script>
 </body>
 </html>
