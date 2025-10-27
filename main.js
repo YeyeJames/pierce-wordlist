@@ -194,6 +194,7 @@ function showWord() {
 }
 
 // 確認答案
+// === 🧠 確認答案 ===
 document.getElementById("btn-submit").addEventListener("click", () => {
   const wordObj = currentWords[currentIndex];
   const input = document.getElementById("answer").value.trim().toLowerCase();
@@ -203,14 +204,14 @@ document.getElementById("btn-submit").addEventListener("click", () => {
   if (!wordObj) return;
 
   if (input === wordObj.word.toLowerCase()) {
-    feedback.textContent = "✅ 正確！";
+    feedback.innerHTML = `✅ 正確！ (${wordObj.word})<br><span style="color:#ccc;">${wordObj.meaning}</span>`;
     feedback.style.color = "#0f0";
     coins += 1;
     localStorage.setItem("beeCoins", coins);
     document.getElementById("coin-balance").textContent = coins;
     playFireworks();
   } else {
-    feedback.textContent = `❌ 錯了，正確拼法是：${wordObj.word}`;
+    feedback.innerHTML = `❌ 錯了，正確拼法是：<b>${wordObj.word}</b><br><span style="color:#ccc;">${wordObj.meaning}</span>`;
     feedback.style.color = "#f66";
   }
 
