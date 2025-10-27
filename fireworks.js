@@ -1,5 +1,5 @@
 // fireworks.js
-export function launchFireworks(x, y) {
+function launchFireworks(x, y) {
   const canvas = document.getElementById("fx");
   const ctx = canvas.getContext("2d");
   canvas.classList.remove("hidden");
@@ -54,3 +54,5 @@ export function launchFireworks(x, y) {
 
   animate();
 }
+
+window.launchFireworks = launchFireworks;
