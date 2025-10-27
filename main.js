@@ -1,6 +1,6 @@
-// === Pierce Spelling Bee — Fixed Visible Build (2025-10-27) ===
-// 整合：登入、商店、中文解釋、朗讀、煙火、週次修正
-console.log("🟢 main.js loaded");
+// === Pierce Spelling Bee — Stable Build v20251027_9 ===
+// Author: 維哲專用整合版
+console.log("🟢 main.js loaded (v20251027_9)");
 
 // === 全域變數 ===
 let currentUser = null;
@@ -14,7 +14,6 @@ let purchased = { fireworks: false, voicepack: false };
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🚀 DOM Ready");
 
-  // 保證 menu 顯示
   const menu = document.getElementById("menu");
   if (menu) menu.classList.remove("hidden");
   const weeksContainer = document.getElementById("weeks");
@@ -23,20 +22,14 @@ document.addEventListener("DOMContentLoaded", () => {
   initLogin();
   initStore();
 
-  // 等待 WEEK_LISTS 可用
-  if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
-    console.log("✅ WEEK_LISTS ready");
-    generateWeeks();
-  } else {
-    console.warn("⚠️ WEEK_LISTS not ready, retrying...");
-    const timer = setInterval(() => {
-      if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
-        console.log("✅ WEEK_LISTS detected (delayed)");
-        generateWeeks();
-        clearInterval(timer);
-      }
-    }, 800);
-  }
+  // 延遲確認 WEEK_LISTS 是否載入
+  const waitForWeeks = setInterval(() => {
+    if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
+      console.log("✅ WEEK_LISTS 載入成功，共 " + Object.keys(window.WEEK_LISTS).length + " 週");
+      generateWeeks();
+      clearInterval(waitForWeeks);
+    }
+  }, 500);
 });
 
 // === 登入系統 ===
@@ -82,11 +75,17 @@ function initLogin() {
 
 // === 生成週次 ===
 function generateWeeks() {
-  console.log("🔧 Generating week buttons...");
-
   const weekContainer = document.getElementById("weeks");
   if (!weekContainer) {
-    console.error("❌ No #weeks element found");
+    console.error("❌ 找不到 #weeks");
+    return;
+  }
+
+  const weekNumbers = Object.keys(window.WEEK_LISTS || {}).map(Number).sort((a, b) => a - b);
+  console.log("🧩 生成週次清單：", weekNumbers);
+
+  if (weekNumbers.length === 0) {
+    weekContainer.innerHTML = "<p style='color:#ccc;'>❌ 沒有單字資料。</p>";
     return;
   }
 
@@ -95,17 +94,11 @@ function generateWeeks() {
   weekContainer.style.gridTemplateColumns = "repeat(auto-fill, minmax(160px, 1fr))";
   weekContainer.style.gap = "12px";
 
-  const weekNumbers = Object.keys(window.WEEK_LISTS || {}).map(Number).sort((a, b) => a - b);
-  if (weekNumbers.length === 0) {
-    weekContainer.innerHTML = "<p style='color:#ccc;'>❌ 沒有單字資料。</p>";
-    return;
-  }
-
   weekNumbers.forEach(week => {
     const list = window.WEEK_LISTS[week];
     const btn = document.createElement("button");
-    btn.className = "week-btn";
     btn.textContent = `Week ${week} — ${list.length} words`;
+    btn.className = "week-btn";
     btn.style.cssText = `
       background:#2a3b6a;
       color:white;
@@ -114,7 +107,10 @@ function generateWeeks() {
       padding:12px;
       font-size:1rem;
       cursor:pointer;
+      transition:0.2s;
     `;
+    btn.addEventListener("mouseenter", () => (btn.style.background = "#3b4b8a"));
+    btn.addEventListener("mouseleave", () => (btn.style.background = "#2a3b6a"));
     btn.addEventListener("click", () => openTrainer(week));
     weekContainer.appendChild(btn);
   });
@@ -261,83 +257,3 @@ function launchFireworks() {
     fx.classList.add("hidden");
   }, 800);
 }
-
-// === 🧩 診斷顯示 ===
-setTimeout(() => {
-  const diag = document.createElement("div");
-  diag.style.position = "fixed";
-  diag.style.bottom = "50px";
-  diag.style.left = "10px";
-  diag.style.background = "rgba(0,0,0,0.8)";
-  diag.style.color = "#0f0";
-  diag.style.fontFamily = "monospace";
-  diag.style.padding = "8px 10px";
-  diag.style.fontSize = "0.85rem";
-  diag.style.borderRadius = "6px";
-  diag.style.zIndex = 9999;
-
-  let report = "";
-
-  // 檢查 WEEK_LISTS 狀態
-  if (window.WEEK_LISTS) {
-    const count = Object.keys(window.WEEK_LISTS).length;
-    report += `✅ WEEK_LISTS ${count} 週\n`;
-  } else {
-    report += "❌ WEEK_LISTS 未載入\n";
-  }
-
-  // 檢查 DOM
-  const menu = document.getElementById("menu");
-  const weeks = document.getElementById("weeks");
-  report += menu ? "✅ #menu 存在\n" : "❌ #menu 不存在\n";
-  report += weeks ? `✅ #weeks 存在 (${weeks.children.length} 子項)\n` : "❌ #weeks 不存在\n";
-
-  // 檢查顯示狀態
-  if (weeks) {
-    const style = getComputedStyle(weeks);
-    report += `顯示狀態：display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity}`;
-  }
-
-  diag.textContent = report;
-  document.body.appendChild(diag);
-}, 1500);
-
-// === 🧩 診斷顯示 ===
-setTimeout(() => {
-  const diag = document.createElement("div");
-  diag.style.position = "fixed";
-  diag.style.bottom = "50px";
-  diag.style.left = "10px";
-  diag.style.background = "rgba(0,0,0,0.8)";
-  diag.style.color = "#0f0";
-  diag.style.fontFamily = "monospace";
-  diag.style.padding = "8px 10px";
-  diag.style.fontSize = "0.85rem";
-  diag.style.borderRadius = "6px";
-  diag.style.zIndex = 9999;
-
-  let report = "";
-
-  // 檢查 WEEK_LISTS 狀態
-  if (window.WEEK_LISTS) {
-    const count = Object.keys(window.WEEK_LISTS).length;
-    report += `✅ WEEK_LISTS ${count} 週\n`;
-  } else {
-    report += "❌ WEEK_LISTS 未載入\n";
-  }
-
-  // 檢查 DOM
-  const menu = document.getElementById("menu");
-  const weeks = document.getElementById("weeks");
-  report += menu ? "✅ #menu 存在\n" : "❌ #menu 不存在\n";
-  report += weeks ? `✅ #weeks 存在 (${weeks.children.length} 子項)\n` : "❌ #weeks 不存在\n";
-
-  // 檢查顯示狀態
-  if (weeks) {
-    const style = getComputedStyle(weeks);
-    report += `顯示狀態：display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity}`;
-  }
-
-  diag.textContent = report;
-  document.body.appendChild(diag);
-}, 1500);
