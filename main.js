@@ -151,3 +151,113 @@ setTimeout(() => {
     console.log("❌ generateWeeks 未定義");
   }
 }, 1000);
+
+// === 🐝 拼字訓練系統 ===
+let currentWeek = null;
+let currentIndex = 0;
+let currentWords = [];
+
+// 點擊週次按鈕 → 進入訓練模式
+function startTraining(weekNum) {
+  currentWeek = weekNum;
+  currentWords = window.WEEK_LISTS[weekNum] || [];
+  currentIndex = 0;
+
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("trainer").classList.remove("hidden");
+
+  document.getElementById("trainer-title").textContent = `Week ${weekNum}`;
+  updateProgress();
+  showWord();
+}
+
+// 顯示目前題目（遮字拼音）
+function showWord() {
+  const feedback = document.getElementById("feedback");
+  const hintBox = document.getElementById("hint");
+  const answer = document.getElementById("answer");
+  const nextBtn = document.getElementById("btn-next");
+
+  feedback.textContent = "";
+  hintBox.textContent = "";
+  answer.value = "";
+  nextBtn.classList.add("hidden");
+
+  const wordObj = currentWords[currentIndex];
+  if (!wordObj) return;
+
+  document.getElementById("btn-speak").onclick = () => speakWord(wordObj.word);
+  document.getElementById("btn-hint").onclick = () => {
+    hintBox.textContent = wordObj.meaning;
+    hintBox.classList.remove("hidden");
+  };
+}
+
+// 確認答案
+document.getElementById("btn-submit").addEventListener("click", () => {
+  const wordObj = currentWords[currentIndex];
+  const input = document.getElementById("answer").value.trim().toLowerCase();
+  const feedback = document.getElementById("feedback");
+  const nextBtn = document.getElementById("btn-next");
+
+  if (!wordObj) return;
+
+  if (input === wordObj.word.toLowerCase()) {
+    feedback.textContent = "✅ 正確！";
+    feedback.style.color = "#0f0";
+    coins += 1;
+    localStorage.setItem("beeCoins", coins);
+    document.getElementById("coin-balance").textContent = coins;
+    playFireworks();
+  } else {
+    feedback.textContent = `❌ 錯了，正確拼法是：${wordObj.word}`;
+    feedback.style.color = "#f66";
+  }
+
+  nextBtn.classList.remove("hidden");
+});
+
+// 下一題
+document.getElementById("btn-next").addEventListener("click", () => {
+  currentIndex++;
+  if (currentIndex < currentWords.length) {
+    showWord();
+    updateProgress();
+  } else {
+    endTraining();
+  }
+});
+
+// 返回主選單
+document.getElementById("btn-back").addEventListener("click", () => {
+  document.getElementById("trainer").classList.add("hidden");
+  document.getElementById("menu").classList.remove("hidden");
+});
+
+// 更新進度條
+function updateProgress() {
+  const progress = document.getElementById("progress-info");
+  progress.textContent = `${currentIndex + 1}/${currentWords.length}`;
+}
+
+// 結束週次
+function endTraining() {
+  alert(`🎉 恭喜完成 Week ${currentWeek}！`);
+  document.getElementById("trainer").classList.add("hidden");
+  document.getElementById("menu").classList.remove("hidden");
+}
+
+// 語音朗讀
+function speakWord(word) {
+  if (!word) return;
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = "en-US";
+  utter.rate = purchased.voicepack ? 0.9 : 1.1;
+  utter.pitch = 1;
+  speechSynthesis.speak(utter);
+}
+
+// 🔄 修改週次按鈕：連動訓練模式
+document.querySelectorAll(".week-btn").forEach(btn => {
+  btn.addEventListener("click", () => startTraining(num));
+});
