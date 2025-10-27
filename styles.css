@@ -1,0 +1,28 @@
+:root{
+  --bg:#0f1226;--panel:#181b36;--text:#eef1ff;--ghost:#2a2e52;
+  --card:#1b1f3f;--input:#0e1230;--good:#7dffb7;--bad:#ff8b8b;--accent:#8bb7ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#0f1226;color:var(--text);font-family:-apple-system,system-ui,Segoe UI,Roboto}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#181b36;position:sticky;top:0}
+.brand{color:var(--accent)}
+.hidden{display:none!important}
+#login-area input{background:var(--input);border:1px solid #2a2e52;color:var(--text);padding:8px 10px;border-radius:8px;width:160px}
+button{background:#2f67ff;border:none;color:white;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
+button.ghost{background:var(--ghost)}
+main{padding:20px;max-width:980px;margin:0 auto}
+.week-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.week-grid button{background:#28306c;border:1px solid #3a438b;border-radius:12px;color:#eff2ff;padding:12px}
+.card{background:var(--card);border:1px solid #2a2e52;border-radius:14px;padding:16px;margin-top:14px}
+.input-row{display:flex;gap:8px}
+.input-row input{flex:1;background:var(--input);border:1px solid #2a2e52;color:var(--text);border-radius:10px;padding:12px 12px;font-size:18px}
+.hint{color:#ffd38b;font-weight:700;margin-left:8px}
+.feedback{min-height:40px;margin-top:10px;font-weight:700}
+.feedback.good{color:var(--good)}
+.feedback.bad{color:var(--bad)}
+.store{min-width:560px;max-width:90vw;background:var(--panel);color:var(--text);border:1px solid #2a2e52;padding:0;border-radius:14px}
+.store header,.store footer{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #2a2e52}
+.store footer{border-top:1px solid #2a2e52;border-bottom:none}
+.store .store-items{padding:12px 16px;display:grid;gap:12px}
+.store .item{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#14183b;padding:12px;border-radius:12px;border:1px solid #2a2e52}
+#fx{position:fixed;inset:0;z-index:999;pointer-events:none}
