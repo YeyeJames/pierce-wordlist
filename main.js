@@ -212,3 +212,43 @@ storeModal.addEventListener("click", (e) => {
     alert("購買成功！");
   }
 });
+// === 🔧 Week Buttons Fallback ===
+// 如果主畫面還沒生成週次按鈕，這段會自動幫你產生
+
+function generateWeeks() {
+  const weeksContainer = document.getElementById("weeks");
+  if (!weeksContainer) {
+    console.warn("⚠️ 找不到 #weeks 容器，可能還沒載入 main 區塊。");
+    return;
+  }
+
+  weeksContainer.innerHTML = "";
+  if (!window.WEEK_LISTS) {
+    weeksContainer.innerHTML =
+      "<p style='color:#f88;text-align:center;'>❌ 尚未載入單字資料。</p>";
+    return;
+  }
+
+  Object.entries(window.WEEK_LISTS).forEach(([week, words]) => {
+    const btn = document.createElement("button");
+    btn.className = "week-btn";
+    btn.textContent = `Week ${week} — ${words.length} words`;
+    btn.addEventListener("click", () => {
+      if (typeof startTrainer === "function") startTrainer(week);
+      else alert("主程式尚未定義 startTrainer()");
+    });
+    weeksContainer.appendChild(btn);
+  });
+
+  console.log("✅ 週次清單已生成，共 " + Object.keys(WEEK_LISTS).length + " 週。");
+}
+
+// 自動執行一次，防止畫面空白
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(() => {
+    if (document.getElementById("weeks")?.children.length === 0) {
+      console.log("🪄 自動生成週次清單（fallback）");
+      generateWeeks();
+    }
+  }, 1000);
+});
