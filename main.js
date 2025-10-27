@@ -1,3 +1,45 @@
+// Pierce Spelling Bee – main.js
+// 2025 update: 保證等 weeks.js 載入後再初始化畫面
+
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🧠 main.js 啟動中...");
+
+  // ✅ 等待 WEEK_LISTS 被定義
+  function waitForWeekLists(retry = 0) {
+    if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
+      console.log("✅ WEEK_LISTS 偵測成功，開始生成週次選單");
+      initApp();
+    } else if (retry < 20) {
+      console.log("⏳ 等待 WEEK_LISTS...", retry);
+      setTimeout(() => waitForWeekLists(retry + 1), 250);
+    } else {
+      alert("⚠️ 無法載入單字資料，請重新整理頁面");
+    }
+  }
+
+  waitForWeekLists();
+});
+
+// === 以下是主邏輯 ===
+function initApp() {
+  const weeksContainer = document.getElementById("weeks");
+  if (!weeksContainer) return;
+
+  // 產生週次按鈕
+  weeksContainer.innerHTML = "";
+  Object.entries(WEEK_LISTS).forEach(([week, words]) => {
+    const btn = document.createElement("button");
+    btn.textContent = `Week ${week} (${words.length} words)`;
+    btn.className = "week-btn";
+    btn.addEventListener("click", () => startTrainer(week));
+    weeksContainer.appendChild(btn);
+  });
+
+  console.log("🎉 週次按鈕生成完成！");
+}
+
+// === 以下保留原本拼字遊戲的邏輯 ===
+// （若你 main.js 後面還有答題、語音、商店等功能，不要刪掉）
 // main.js
 const { launchFireworks } = window;
 const { Storage } = window;
