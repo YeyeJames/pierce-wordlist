@@ -501,6 +501,8 @@ window.WEEK_LISTS = {
     { word: "whistle", meaning: "吹口哨" }
   ],
 
+14: [],
+
   15: [
     { word: "baby", meaning: "嬰兒" },
     { word: "bunny", meaning: "小兔子" },
