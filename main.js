@@ -234,3 +234,23 @@ document.getElementById("btn-back").addEventListener("click", () => {
   document.getElementById("trainer").classList.add("hidden");
   document.getElementById("menu").classList.remove("hidden");
 });
+// === 除錯顯示 ===
+setTimeout(() => {
+  console.log("🐝 除錯檢查開始");
+
+  if (!window.WEEK_LISTS) {
+    alert("❌ WEEK_LISTS 未定義！");
+    return;
+  }
+
+  const count = Object.keys(window.WEEK_LISTS).length;
+  alert(`✅ WEEK_LISTS 已載入，共 ${count} 週`);
+
+  const firstWeek = window.WEEK_LISTS[1];
+  console.log("Week 1 sample:", firstWeek);
+
+  const weeksContainer = document.getElementById("weeks");
+  console.log("📦 weeksContainer =", weeksContainer);
+  console.log("📦 innerHTML =", weeksContainer.innerHTML);
+
+}, 2000);
