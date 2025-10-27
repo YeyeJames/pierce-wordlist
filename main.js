@@ -258,3 +258,36 @@ function speakWord(word) {
   speechSynthesis.speak(utter);
 }
 
+// === 🎤 錄音比對功能 ===
+let mediaRecorder;
+let recordedChunks = [];
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    recordedChunks = [];
+
+    mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(recordedChunks, { type: "audio/webm" });
+      const url = URL.createObjectURL(blob);
+
+      const audio = new Audio(url);
+      audio.play(); // 🔊 自動播放剛錄的音
+      alert("🎧 錄音完成，可自行聆聽比對發音。");
+    };
+
+    mediaRecorder.start();
+    alert("🎙️ 開始錄音（再次點擊「停止錄音」即可結束）");
+  } catch (err) {
+    alert("❌ 無法啟動錄音，請確認已允許麥克風權限。");
+    console.error(err);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    mediaRecorder.stop();
+  }
+}
