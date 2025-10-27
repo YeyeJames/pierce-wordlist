@@ -97,24 +97,41 @@
   <canvas id="fx" class="hidden"></canvas>
   <!-- ✅ JS 載入區（請放在 </body> 前） -->
   <!-- 先載入單字週次資料 -->
-  <script src="wordlists/weeks.js"></script>
-
-  <!-- 確保 weeks.js 載入完成後，再載入其他功能 -->
+  <!-- === JS 載入區（請放在 </body> 前） === -->
   <script>
+    // 動態載入 weeks.js，確保順序正確
+    function loadWeeks(callback) {
+      const script = document.createElement("script");
+      script.src = "wordlists/weeks.js?v=" + Date.now(); // 防快取
+      script.onload = callback;
+      script.onerror = () => {
+        alert("❌ 無法載入單字列表（weeks.js）");
+      };
+      document.head.appendChild(script);
+    }
+
+    // 預設載入提示畫面
     document.addEventListener("DOMContentLoaded", () => {
-      if (window.WEEK_LISTS) {
-        console.log("✅ WEEK_LISTS 載入成功，啟動主程式...");
+      const main = document.querySelector("main");
+      main.innerHTML =
+        '<div style="text-align:center;padding:80px 20px;font-size:1.3rem;">🐝 正在載入單字資料...</div>';
 
-        const files = ["fireworks.js", "storage.js", "main.js"];
-        files.forEach(src => {
-          const script = document.createElement("script");
-          script.src = src + "?v=" + Date.now(); // 加上時間戳避免快取
-          document.body.appendChild(script);
-        });
+      // 嘗試載入 weeks.js
+      loadWeeks(() => {
+        if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
+          console.log("✅ WEEK_LISTS 載入成功，共 " + Object.keys(window.WEEK_LISTS).length + " 週。");
 
-      } else {
-        alert("⚠️ 單字資料載入失敗，請重新整理頁面！");
-      }
+          // 再載入其他腳本
+          const files = ["fireworks.js", "storage.js", "main.js"];
+          files.forEach(src => {
+            const s = document.createElement("script");
+            s.src = src + "?v=" + Date.now();
+            document.body.appendChild(s);
+          });
+        } else {
+          alert("⚠️ 單字資料未定義，請檢查 weeks.js 是否語法錯誤！");
+        }
+      });
     });
   </script>
 </body>
