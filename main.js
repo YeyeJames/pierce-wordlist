@@ -254,3 +254,40 @@ setTimeout(() => {
   console.log("📦 innerHTML =", weeksContainer.innerHTML);
 
 }, 2000);
+// === 🧩 Debug Overlay (for mobile Safari) ===
+(function(){
+  const debugBox = document.createElement("div");
+  debugBox.id = "debug-box";
+  debugBox.style = `
+    position: fixed;
+    bottom: 60px;
+    left: 10px;
+    width: 95%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.7);
+    color: #0f0;
+    font-family: monospace;
+    font-size: 0.75rem;
+    padding: 8px;
+    border-radius: 6px;
+    z-index: 99999;
+    white-space: pre-wrap;
+  `;
+  document.body.appendChild(debugBox);
+
+  const log = (...args) => {
+    const msg = args.map(a => typeof a === "object" ? JSON.stringify(a, null, 2) : a).join(" ");
+    debugBox.textContent += `\n${msg}`;
+    debugBox.scrollTop = debugBox.scrollHeight;
+  };
+
+  // 監聽 console.log 與錯誤
+  const origLog = console.log;
+  console.log = (...args) => { origLog(...args); log("🟢", ...args); };
+  window.addEventListener("error", e => {
+    log("❌ ERROR:", e.message);
+  });
+
+  log("🐝 Debug overlay started");
+})();
