@@ -118,7 +118,6 @@ window.WEEK_LISTS = {
     { word: "steps", meaning: "步驟；樓梯" },
     { word: "terrible", meaning: "可怕的；糟糕的" }
   ]
-};
 
 
   4: [
@@ -243,8 +242,7 @@ window.WEEK_LISTS = {
     { word: "nod", meaning: "點頭" },
     { word: "paste", meaning: "黏貼；糊狀物" },
     { word: "permission", meaning: "允許" }
-  ]
-};
+  ],
 
 
   7: [
@@ -325,10 +323,7 @@ window.WEEK_LISTS = {
     { word: "track", meaning: "跑道；軌道" },
     { word: "uncle", meaning: "叔叔；舅舅" },
     { word: "whiskers", meaning: "鬍鬚（貓或動物）" }
-  ]
-};
-window.WEEK_LISTS = {
-  ...window.WEEK_LISTS,
+  ],
 
   10: [
     { word: "braid", meaning: "辮子" },
@@ -456,10 +451,7 @@ window.WEEK_LISTS = {
     { word: "quick", meaning: "快速的" },
     { word: "skunk", meaning: "臭鼬" },
     { word: "suddenly", meaning: "突然地" }
-  ]
-};
-window.WEEK_LISTS = {
-  ...window.WEEK_LISTS,
+  ],
 
   13: [
     { word: "blew", meaning: "吹（blow 的過去式）" },
@@ -556,10 +548,7 @@ window.WEEK_LISTS = {
     { word: "rock", meaning: "岩石；搖動" },
     { word: "star", meaning: "星星" },
     { word: "swish", meaning: "嗖嗖聲；揮動聲" }
-  ]
-};
-window.WEEK_LISTS = {
-  ...window.WEEK_LISTS,
+  ],
 
   16: [
     { word: "bath", meaning: "洗澡" },
