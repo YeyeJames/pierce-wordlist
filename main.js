@@ -1,4 +1,4 @@
-/* Pierce Edition — Trainer App (with Chinese meaning + Recording Prompt) */
+/* Pierce Edition — 完整主程式 (答題 + 中文解釋 + 錄音提示 + 商店 + 煙火) */
 
 const els = {
   loginArea: document.getElementById('login-area'),
@@ -41,12 +41,12 @@ let state = {
   voiceRate: 1.0,
 };
 
+/* === 基本資料存取 === */
 function loadProfile() {
   const raw = localStorage.getItem(DB_KEY);
   if (!raw) return null;
   try { return JSON.parse(raw); } catch(e){ return null; }
 }
-
 function saveProfile() {
   if (!state.user) return;
   const profile = {
@@ -58,6 +58,7 @@ function saveProfile() {
   localStorage.setItem(DB_KEY, JSON.stringify(profile));
 }
 
+/* === 登入登出 === */
 function login(name) {
   let profile = loadProfile();
   if (!profile || profile.user !== name) {
@@ -66,14 +67,12 @@ function login(name) {
   }
   applyProfile(profile);
 }
-
 function logout() {
   state = { user:null, week:null, words:[], order:[], index:0, purchased:{}, coins:0, voiceRate:1.0, progress:{} };
   els.profileArea.classList.add('hidden');
   els.loginArea.classList.remove('hidden');
   updateCoins(0);
 }
-
 function applyProfile(profile) {
   state.user = profile.user;
   state.coins = profile.coins || 0;
@@ -84,9 +83,9 @@ function applyProfile(profile) {
   els.loginArea.classList.add('hidden');
   els.profileArea.classList.remove('hidden');
 }
-
 function updateCoins(v) { els.coinBalance.textContent = v; }
 
+/* === 週次按鈕 === */
 function buildWeekButtons() {
   els.weeks.innerHTML = '';
   for (let w=1; w<=18; w++) {
@@ -98,7 +97,6 @@ function buildWeekButtons() {
     els.weeks.appendChild(btn);
   }
 }
-
 function shuffle(arr) {
   for (let i=arr.length-1; i>0; i--) {
     const j = Math.floor(Math.random()*(i+1));
@@ -107,6 +105,7 @@ function shuffle(arr) {
   return arr;
 }
 
+/* === 練習主流程 === */
 function startWeek(w) {
   state.week = w;
   state.words = (window.WEEK_LISTS[w]||[]).slice();
@@ -118,15 +117,12 @@ function startWeek(w) {
   updateProgress();
   nextPrompt();
 }
-
 function updateProgress() {
   els.progressInfo.textContent = `${Math.min(state.index+1, state.words.length)}/${state.words.length}`;
 }
+function currentItem() { return state.words[state.order[state.index]]; }
 
-function currentItem() {
-  return state.words[state.order[state.index]];
-}
-
+/* === 語音與提示 === */
 function speak(text) {
   if (!('speechSynthesis' in window)) return;
   const u = new SpeechSynthesisUtterance(text);
@@ -134,14 +130,15 @@ function speak(text) {
   u.rate = state.voiceRate;
   window.speechSynthesis.speak(u);
 }
-
 function showHint() {
-  const w = currentItem().word;
+  const item = currentItem();
+  const w = item.word;
   const hint = w.replace(/[A-Za-z]/g, '•').replace(/\s+/g, '  ');
-  els.hint.textContent = hint + `  (${w.length} chars)`;
+  els.hint.textContent = hint + `  (${w.length} 個字母)`;
   els.hint.classList.remove('hidden');
 }
 
+/* === 煙火特效 === */
 function correctFx() {
   if (!state.purchased.fireworks) return;
   const canvas = els.fx;
@@ -151,14 +148,13 @@ function correctFx() {
   canvas.width = innerWidth * dpr;
   canvas.height = innerHeight * dpr;
   ctx.scale(dpr, dpr);
-  const pieces = Array.from({length: 140}, () => ({
+  const pieces = Array.from({length: 120}, () => ({
     x: Math.random()*innerWidth,
     y: Math.random()*innerHeight*0.6,
     vx: (Math.random()-0.5)*6,
     vy: -Math.random()*8 - 2,
     g: 0.25 + Math.random()*0.1,
-    r: 2 + Math.random()*3,
-    life: 60 + Math.floor(Math.random()*30)
+    r: 2 + Math.random()*3
   }));
   let t = 0;
   function tick() {
@@ -167,7 +163,6 @@ function correctFx() {
       p.vy += p.g;
       p.x += p.vx;
       p.y += p.vy;
-      p.life--;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
       ctx.fillStyle = `hsl(${(p.x+p.y+t)%360},100%,60%)`;
@@ -179,18 +174,14 @@ function correctFx() {
   tick();
 }
 
-// === New: Recording feature ===
-let mediaRecorder, audioChunks = [];
-
+/* === 錄音檢測 === */
 function setupRecording(buttonEl) {
   if (!navigator.mediaDevices?.getUserMedia) {
-    alert('Recording not supported on this browser.');
+    alert('瀏覽器不支援錄音功能');
     return;
   }
-
   buttonEl.disabled = true;
-  buttonEl.textContent = '🎙️ Recording...';
-
+  buttonEl.textContent = '🎙️ 錄音中…';
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     const ctx = new AudioContext();
     const source = ctx.createMediaStreamSource(stream);
@@ -198,35 +189,29 @@ function setupRecording(buttonEl) {
     source.connect(analyser);
     analyser.fftSize = 512;
     const data = new Uint8Array(analyser.frequencyBinCount);
-
-    let volumeDetected = false;
+    let loud = false;
     const start = Date.now();
-    function checkVolume() {
+    function check() {
       analyser.getByteFrequencyData(data);
       const avg = data.reduce((a,b)=>a+b,0)/data.length;
-      if (avg > 15) volumeDetected = true;
-      if (Date.now()-start < 3000) {
-        requestAnimationFrame(checkVolume);
-      } else {
+      if (avg > 15) loud = true;
+      if (Date.now()-start < 3000) requestAnimationFrame(check);
+      else {
         stream.getTracks().forEach(t=>t.stop());
-        buttonEl.textContent = volumeDetected ? '✅ Good practice!' : '🔈 Try again!';
-        setTimeout(()=> buttonEl.textContent='🎤 Try recording yourself!', 2500);
+        buttonEl.textContent = loud ? '✅ 很棒！再試一次' : '🔈 再大聲一點！';
+        setTimeout(()=> buttonEl.textContent='🎤 嘗試錄音練習', 2500);
         buttonEl.disabled = false;
       }
     }
-    checkVolume();
-  }).catch(err=>{
-    console.error(err);
-    alert('Unable to access microphone.');
-    buttonEl.disabled = false;
-    buttonEl.textContent = '🎤 Try recording yourself!';
-  });
+    check();
+  }).catch(()=> alert('無法啟用麥克風權限'));
 }
 
+/* === 答題流程 === */
 function nextPrompt() {
   if (state.index >= state.words.length) {
     els.feedback.className = 'feedback good';
-    els.feedback.textContent = 'Great job! You finished this week 🎉';
+    els.feedback.textContent = '恭喜完成本週所有單字 🎉';
     els.btnSubmit.disabled = true;
     els.answer.disabled = true;
     els.btnNext.classList.add('hidden');
@@ -240,23 +225,19 @@ function nextPrompt() {
   const w = currentItem().word;
   setTimeout(()=> speak(w), 250);
 }
-
 function submit() {
   const item = currentItem();
-  const w = item.word;
-  const input = (els.answer.value||'').trim();
+  const correct = item.word.trim().toLowerCase();
+  const input = (els.answer.value||'').trim().toLowerCase();
   if (!input) return;
-  if (input.toLowerCase() === w.toLowerCase()) {
+  if (input === correct) {
     els.feedback.className = 'feedback good';
-    els.feedback.innerHTML = `✅ Correct: ${w}<br>(${item.meaning || ''})`;
-
-    // Add recording button
-    const recordBtn = document.createElement('button');
-    recordBtn.textContent = '🎤 Try recording yourself!';
-    recordBtn.style.marginTop = '8px';
-    recordBtn.addEventListener('click', ()=> setupRecording(recordBtn));
-    els.feedback.appendChild(recordBtn);
-
+    els.feedback.innerHTML = `✅ 答對了！<br>${item.word} (${item.meaning||''})`;
+    const recBtn = document.createElement('button');
+    recBtn.textContent = '🎤 嘗試錄音練習';
+    recBtn.style.marginTop = '8px';
+    recBtn.addEventListener('click', ()=> setupRecording(recBtn));
+    els.feedback.appendChild(recBtn);
     state.coins += 1;
     updateCoins(state.coins);
     correctFx();
@@ -265,14 +246,15 @@ function submit() {
     els.btnNext.classList.remove('hidden');
   } else {
     els.feedback.className = 'feedback bad';
-    els.feedback.textContent = `❌ Try again`;
+    els.feedback.textContent = '❌ 再試一次！';
   }
 }
 
+/* === 商店 === */
 function buy(item) {
   const cost = PRICE[item];
   if (state.purchased[item]) return;
-  if (state.coins < cost) return alert('Not enough coins.');
+  if (state.coins < cost) return alert('單字幣不足');
   state.coins -= cost;
   state.purchased[item] = true;
   if (item === 'voicepack') state.voiceRate = 1.25;
@@ -280,21 +262,18 @@ function buy(item) {
   saveProfile();
   refreshStore();
 }
-
 function refreshStore() {
   els.storeBalance.textContent = state.coins;
-  const dialog = els.storeModal;
-  dialog.querySelectorAll('[data-buy]').forEach(btn => {
+  els.storeModal.querySelectorAll('[data-buy]').forEach(btn=>{
     const item = btn.getAttribute('data-buy');
     const owned = !!state.purchased[item];
-    const wrap = btn.parentElement;
-    const ownedTag = wrap.querySelector('.owned');
+    const ownedTag = btn.parentElement.querySelector('.owned');
     btn.classList.toggle('hidden', owned);
     ownedTag.classList.toggle('hidden', !owned);
   });
 }
 
-/* Events */
+/* === 事件 === */
 els.btnLogin.addEventListener('click', ()=>{
   const name = (els.username.value||'').trim();
   if (!name) return;
@@ -310,19 +289,15 @@ els.btnBack.addEventListener('click', ()=>{
 els.btnSpeak.addEventListener('click', ()=> speak(currentItem()?.word||''));
 els.btnHint.addEventListener('click', showHint);
 els.btnSubmit.addEventListener('click', submit);
-els.answer.addEventListener('keydown', (e)=>{
+els.answer.addEventListener('keydown', e=>{
   if (e.key === 'Enter') { e.preventDefault(); submit(); }
 });
 els.btnNext.addEventListener('click', nextPrompt);
+els.btnStore.addEventListener('click', ()=>{ refreshStore(); els.storeModal.showModal(); });
 
-els.btnStore.addEventListener('click', ()=>{
-  refreshStore();
-  els.storeModal.showModal();
-});
-
-/* Init */
+/* === 初始化 === */
 (function init(){
-  const profile = loadProfile();
-  if (profile) applyProfile(profile);
+  const p = loadProfile();
+  if (p) applyProfile(p);
   buildWeekButtons();
 })();
