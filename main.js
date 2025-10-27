@@ -1,8 +1,7 @@
-// === Pierce Spelling Bee — Stable Build v20251027_9 ===
-// Author: 維哲專用整合版
-console.log("🟢 main.js loaded (v20251027_9)");
+// === Pierce Spelling Bee — Final Stable v20251028 ===
+// by 維哲專用版
+console.log("🟢 main.js loaded (v20251028)");
 
-// === 全域變數 ===
 let currentUser = null;
 let coins = 0;
 let currentWeek = null;
@@ -22,17 +21,23 @@ document.addEventListener("DOMContentLoaded", () => {
   initLogin();
   initStore();
 
-  // 延遲確認 WEEK_LISTS 是否載入
-  const waitForWeeks = setInterval(() => {
-    if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
-      console.log("✅ WEEK_LISTS 載入成功，共 " + Object.keys(window.WEEK_LISTS).length + " 週");
-      generateWeeks();
-      clearInterval(waitForWeeks);
-    }
-  }, 500);
+  // 💡 若 WEEK_LISTS 已經存在就立即生成
+  if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
+    console.log("✅ WEEK_LISTS 已存在，立即生成");
+    generateWeeks();
+  } else {
+    // 若尚未存在，等候直到 weeks.js 載入完畢
+    const waitForWeeks = setInterval(() => {
+      if (window.WEEK_LISTS && Object.keys(window.WEEK_LISTS).length > 0) {
+        console.log("✅ WEEK_LISTS 延遲載入成功，共 " + Object.keys(window.WEEK_LISTS).length + " 週");
+        generateWeeks();
+        clearInterval(waitForWeeks);
+      }
+    }, 500);
+  }
 });
 
-// === 登入系統 ===
+// === 登入 ===
 function initLogin() {
   const loginArea = document.getElementById("login-area");
   const profileArea = document.getElementById("profile-area");
@@ -118,7 +123,7 @@ function generateWeeks() {
   console.log(`✅ 已生成 ${weekNumbers.length} 週按鈕`);
 }
 
-// === 開啟拼字畫面 ===
+// === 開啟訓練模式 ===
 function openTrainer(weekNum) {
   currentWeek = weekNum;
   words = WEEK_LISTS[weekNum];
@@ -133,11 +138,10 @@ function openTrainer(weekNum) {
   document.getElementById("trainer").classList.remove("hidden");
   document.getElementById("trainer-title").textContent = `Week ${weekNum}`;
   document.getElementById("progress-info").textContent = `1 / ${words.length}`;
-
   showWord();
 }
 
-// === 顯示單字 ===
+// === 顯示題目 ===
 function showWord() {
   const feedback = document.getElementById("feedback");
   feedback.textContent = "";
@@ -153,11 +157,10 @@ function showWord() {
     hint.textContent = `💡 中文提示：${wordData.meaning}`;
     hint.classList.remove("hidden");
   };
-
   document.getElementById("btn-submit").onclick = () => checkAnswer(wordData);
 }
 
-// === 朗讀 ===
+// === 發音 ===
 function speakWord(word) {
   const utter = new SpeechSynthesisUtterance(word);
   utter.lang = "en-US";
@@ -165,7 +168,7 @@ function speakWord(word) {
   speechSynthesis.speak(utter);
 }
 
-// === 判斷對錯 ===
+// === 判斷 ===
 function checkAnswer(wordData) {
   const ans = document.getElementById("answer").value.trim().toLowerCase();
   const feedback = document.getElementById("feedback");
