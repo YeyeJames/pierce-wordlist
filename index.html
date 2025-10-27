@@ -102,127 +102,46 @@
   <!-- === JS 載入區（請放在 </body> 前） === -->
   <!-- === JS 載入區（請放在 </body> 前） === -->
   <!-- === JS 載入區（請放在 </body> 前） === -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const main = document.querySelector("main");
-      main.innerHTML = '<div style="text-align:center;padding:80px 20px;font-size:1.3rem;">🐝 正在載入單字資料...</div>';
+<!-- === Pierce Spelling Bee – Static Safe Loader === -->
+<script src="wordlists/weeks.js?v=20251027b"></script>
 
-      // ✅ 偵測在 GitHub Pages 或本地開發
-      const repoName = "pierce-wordlist";
-      const basePath = location.hostname.includes("github.io") ? `/${repoName}/` : "./";
-
-      // ✅ 動態載入外部 JS
-      function loadScript(src) {
-        return new Promise((resolve, reject) => {
-          const s = document.createElement("script");
-          s.src = basePath + src + "?v=" + Date.now();
-          s.onload = () => {
-            console.log("✅ 已載入：" + s.src);
-            resolve();
-          };
-          s.onerror = () => reject(new Error("❌ 無法載入 " + s.src));
-          document.body.appendChild(s);
-        });
-      }
-
-      // ✅ 主流程
-      async function startApp() {
-        try {
-          await loadScript("wordlists/weeks.js");
-
-          // 👇 我們要看的這兩行（請保留）
-          console.log("📘 WEEK_LISTS 檢查：", window.WEEK_LISTS ? "OK" : "未定義");
-          document.body.insertAdjacentHTML('beforeend', `<div style="position:fixed;bottom:20px;left:20px;color:#fff;background:#222;padding:8px 12px;border-radius:6px;z-index:9999;">WEEK_LISTS：${window.WEEK_LISTS ? '✅ 已載入' : '❌ 未定義'}</div>`);
-
-          if (!window.WEEK_LISTS) throw new Error("WEEK_LISTS 未定義");
-
-          await loadScript("fireworks.js");
-          await loadScript("storage.js");
-          await loadScript("main.js");
-
-          const loading = document.querySelector("main div");
-          if (loading) loading.remove();
-          console.log("✅ 所有腳本載入完成");
-        } catch (err) {
-          console.error(err);
-          main.innerHTML = `<div style="text-align:center;padding:80px 20px;color:#f88;">⚠️ 載入失敗：${err.message}<br>請重新整理。</div>`;
-        }
-      }
-
-      startApp();
-    });
-  </script>
-  <!-- === Pierce Safe Loader Final Fix === -->
 <script>
-(async function () {
-  console.log("🐝 Pierce Safe Loader 啟動中...");
+  console.log("🐝 Pierce Spelling Bee 安全啟動");
 
-  // 等待 DOM 準備好
-  await new Promise(resolve => {
-    if (document.readyState === "complete" || document.readyState === "interactive") resolve();
-    else document.addEventListener("DOMContentLoaded", resolve);
-  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const main = document.querySelector("main");
+    const weeksContainer = document.getElementById("weeks");
+    main.innerHTML = `
+      <section id="menu">
+        <h2>選擇週次</h2>
+        <div id="weeks" class="week-grid"></div>
+      </section>
+    `;
 
-  // 載入 weeks.js
-  await new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = "wordlists/weeks.js?v=" + Date.now();
-    s.onload = () => {
-      console.log("✅ weeks.js 已載入，共", Object.keys(window.WEEK_LISTS || {}).length, "週");
-      resolve();
-    };
-    s.onerror = reject;
-    document.head.appendChild(s);
-  }).catch(() => alert("❌ 無法載入 weeks.js"));
-
-  // 確保 main.js 有載入
-  await new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = "main.js?v=" + Date.now();
-    s.onload = () => {
-      console.log("✅ main.js 已載入");
-      resolve();
-    };
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-
-  // 確認 DOM 有 #weeks 容器
-  const weeksContainer = document.getElementById("weeks");
-  if (!weeksContainer) {
-    console.error("⚠️ 找不到 #weeks 容器");
-    return;
-  }
-
-  // 如果 main.js 尚未自動生成週次，這裡強制呼叫
-  setTimeout(() => {
-    if (weeksContainer.children.length === 0 && window.WEEK_LISTS) {
-      console.log("🪄 手動生成週次列表");
-      weeksContainer.innerHTML = "";
-      Object.entries(window.WEEK_LISTS).forEach(([week, words]) => {
-        const btn = document.createElement("button");
-        btn.className = "week-btn";
-        btn.textContent = `Week ${week} — ${words.length} words`;
-        btn.addEventListener("click", () => {
-          if (typeof startTrainer === "function") startTrainer(week);
-          else alert("主程式未定義 startTrainer()");
-        });
-        weeksContainer.appendChild(btn);
-      });
+    if (!window.WEEK_LISTS) {
+      main.innerHTML += `<p style="text-align:center;color:#f66;">❌ 無法載入 weeks.js</p>`;
+      return;
     }
 
-    const badge = document.createElement("div");
-    badge.style.position = "fixed";
-    badge.style.bottom = "8px";
-    badge.style.left = "8px";
-    badge.style.background = "rgba(0,0,0,0.6)";
-    badge.style.color = "#0f0";
-    badge.style.padding = "4px 8px";
-    badge.style.borderRadius = "6px";
-    badge.textContent = "🐝 Ready — " + Object.keys(window.WEEK_LISTS || {}).length + " Weeks";
-    document.body.appendChild(badge);
-  }, 800);
-})();
+    const container = document.getElementById("weeks");
+    Object.entries(WEEK_LISTS).forEach(([week, list]) => {
+      const btn = document.createElement("button");
+      btn.className = "week-btn";
+      btn.textContent = `Week ${week} — ${list.length} words`;
+      btn.addEventListener("click", () => {
+        alert("開啟 Week " + week + "（目前僅測試按鈕反應）");
+      });
+      container.appendChild(btn);
+    });
+
+    const info = document.createElement("div");
+    info.style.position = "fixed";
+    info.style.bottom = "10px";
+    info.style.left = "10px";
+    info.style.color = "#0f0";
+    info.textContent = `✅ WEEK_LISTS 已載入 (${Object.keys(WEEK_LISTS).length} 週)`;
+    document.body.appendChild(info);
+  });
 </script>
 </body>
 </html>
