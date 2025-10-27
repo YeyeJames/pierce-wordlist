@@ -99,6 +99,7 @@
   <!-- 先載入單字週次資料 -->
   <!-- === JS 載入區（請放在 </body> 前） === -->
   <!-- === JS 載入區（請放在 </body> 前） === -->
+  <!-- === JS 載入區（請放在 </body> 前） === -->
   <script>
     // 🐝 顯示載入畫面
     document.addEventListener("DOMContentLoaded", () => {
@@ -106,33 +107,56 @@
       main.innerHTML =
         '<div style="text-align:center;padding:80px 20px;font-size:1.3rem;">🐝 正在載入單字資料...</div>';
 
-      // 取得路徑基底（可在本機或 GitHub Pages 都能正確）
+      // 自動偵測 GitHub Pages base 路徑（支援 pierce-wordlist 或 root）
       const base = location.pathname.includes("pierce-wordlist") ? "/pierce-wordlist" : "";
 
-      // 動態載入 JS 檔案的函式
+      // 通用載入函式（含防快取）
       function loadScript(src) {
         return new Promise((resolve, reject) => {
           const s = document.createElement("script");
-          s.src = base + "/" + src + "?v=" + Date.now(); // 防快取
+          s.src = base + "/" + src + "?v=" + Date.now();
           s.onload = resolve;
           s.onerror = () => reject(new Error("❌ 無法載入 " + src));
           document.body.appendChild(s);
         });
       }
 
-      // 順序載入腳本（確保 weeks.js 完成後才執行 main.js）
+      // 嘗試多次載入 weeks.js，避免網路不穩時卡住
+      async function loadWeeksWithRetry(maxRetries = 3) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            console.log(`📘 嘗試載入 weeks.js（第 ${attempt} 次）`);
+            await loadScript("wordlists/weeks.js");
+            if (!window.WEEK_LISTS) throw new Error("WEEK_LISTS 未定義");
+            console.log("✅ weeks.js 載入成功");
+            return true;
+          } catch (err) {
+            console.warn("⚠️ 載入失敗：" + err.message);
+            if (attempt === maxRetries) throw err;
+            await new Promise(r => setTimeout(r, 1000)); // 等 1 秒再重試
+          }
+        }
+      }
+
+      // 主程序：按順序載入所有 JS
       (async () => {
         try {
-          await loadScript("wordlists/weeks.js");
-          if (!window.WEEK_LISTS) throw new Error("WEEK_LISTS 未定義（weeks.js 錯誤）");
+          await loadWeeksWithRetry();
 
           await loadScript("fireworks.js");
           await loadScript("storage.js");
           await loadScript("main.js");
 
+          // 移除載入提示
+          const note = document.querySelector("main div");
+          if (note) note.remove();
+
           console.log("✅ 所有腳本載入完成！");
         } catch (err) {
-          alert(err.message);
+          main.innerHTML =
+            '<div style="text-align:center;padding:80px 20px;color:#f88;font-size:1.2rem;">⚠️ 載入失敗：' +
+            err.message +
+            '<br>請重新整理再試一次。</div>';
           console.error(err);
         }
       })();
