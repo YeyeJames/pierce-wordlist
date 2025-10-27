@@ -95,11 +95,27 @@
   </dialog>
 
   <canvas id="fx" class="hidden"></canvas>
-
+  <!-- ✅ JS 載入區（請放在 </body> 前） -->
+  <!-- 先載入單字週次資料 -->
   <script src="wordlists/weeks.js"></script>
-<script src="wordlists/weeks.js"></script>
-<script src="fireworks.js"></script>
-<script src="storage.js"></script>
-<script src="main.js"></script>
+
+  <!-- 確保 weeks.js 載入完成後，再載入其他功能 -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.WEEK_LISTS) {
+        console.log("✅ WEEK_LISTS 載入成功，啟動主程式...");
+
+        const files = ["fireworks.js", "storage.js", "main.js"];
+        files.forEach(src => {
+          const script = document.createElement("script");
+          script.src = src + "?v=" + Date.now(); // 加上時間戳避免快取
+          document.body.appendChild(script);
+        });
+
+      } else {
+        alert("⚠️ 單字資料載入失敗，請重新整理頁面！");
+      }
+    });
+  </script>
 </body>
 </html>
