@@ -1,144 +1,735 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pierce Spelling Bee</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pierce 專用拼字練習</title>
+    <style>
+        /* CSS 樣式 */
+        body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background-color: #f4f4f9; color: #333; }
+        #header { position: fixed; top: 0; left: 0; width: 100%; background-color: #4CAF50; color: white; padding: 10px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
+        #stats { display: flex; gap: 30px; font-size: 1.2em; }
+        #stats span { display: flex; align-items: center; }
+        .coin-icon { color: gold; font-size: 1.5em; margin-right: 5px; }
+        .rule-icon { cursor: pointer; margin-left: 10px; }
+        #content { padding-top: 70px; padding-bottom: 20px; max-width: 800px; margin: auto; }
+        .section { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { color: #4CAF50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
 
-  <!-- 🐝 自動避免快取 -->
-  <script>
-    const VER = Date.now(); // 每次開啟都帶新時間戳
-    document.write(`<link rel="stylesheet" href="styles.css?v=${VER}" />`);
-  </script>
+        /* 週次選擇 */
+        #week-selection select { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; width: 100%; }
+
+        /* 練習區 */
+        #quiz-area { text-align: center; }
+        #word-display { font-size: 2em; margin-bottom: 15px; min-height: 40px; }
+        #chinese-display { font-size: 1.2em; color: #555; margin-top: 10px; min-height: 20px; }
+        #input-container { display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
+        #spelling-input { padding: 10px; font-size: 18px; border-radius: 5px; border: 2px solid #ccc; width: 60%; margin-right: 10px; text-transform: lowercase; }
+        #spelling-input:focus { border-color: #4CAF50; outline: none; }
+        button { padding: 10px 15px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; margin: 5px; }
+        .primary-btn { background-color: #008CBA; color: white; }
+        .primary-btn:hover { background-color: #007B9E; }
+        .action-btn { background-color: #f44336; color: white; }
+        .action-btn:hover { background-color: #da190b; }
+        .secondary-btn { background-color: #ff9800; color: white; }
+        .secondary-btn:hover { background-color: #e68900; }
+        .success-msg { color: green; font-weight: bold; margin-top: 10px; }
+        .error-msg { color: red; font-weight: bold; margin-top: 10px; }
+
+        /* 錄音/提示區 */
+        #recording-section { margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 15px; }
+        #recording-controls button { background-color: #3f51b5; }
+        #recording-controls button:hover { background-color: #303f9f; }
+
+        /* 商店區 */
+        .shop-item { border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .item-info h4 { margin: 0 0 5px 0; color: #3f51b5; }
+        .item-info p { margin: 0; font-size: 0.9em; color: #666; }
+        .buy-btn { background-color: gold; color: #333; font-weight: bold; }
+        .buy-btn:hover { background-color: #e6c200; }
+
+        /* 模態框 (金幣規則) */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 10px; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
+        .close:hover, .close:focus { color: #000; text-decoration: none; cursor: pointer; }
+
+    </style>
 </head>
-
 <body>
-  <header class="topbar">
-    <h1>Spelling Bee — <span class="brand">Pierce Edition</span></h1>
-    <div class="user-panel">
-      <div id="login-area">
-        <input id="username" placeholder="輸入名字登入" />
-        <button id="btn-login">登入</button>
-      </div>
-      <div id="profile-area" class="hidden">
-        <span>Hi, <b id="profile-name"></b> ✨</span>
-        <span class="coins">🪙 <b id="coin-balance">0</b></span>
-        <button id="btn-store">商店</button>
-        <button id="btn-logout" class="ghost">登出</button>
-      </div>
+
+    <div id="header">
+        <div id="stats">
+            <span><span class="coin-icon">💰</span>目前金幣: <span id="current-coins">0</span></span>
+            <span>連續答對: <span id="streak-count">0</span> 題</span>
+        </div>
+        <div>
+            金幣獲取規則 <span class="rule-icon" id="rule-btn">ℹ️</span>
+            <button id="shop-btn" class="secondary-btn">🎆 商店</button>
+        </div>
     </div>
-  </header>
 
-  <main>
-    <section id="menu">
-      <h2>選擇週次</h2>
-      <div id="weeks" class="week-grid"></div>
-    </section>
+    <div id="content">
 
-    <section id="trainer" class="hidden">
-      <div class="trainer-header">
-        <button id="btn-back" class="ghost">← 返回</button>
-        <h3 id="trainer-title">Week ?</h3>
-        <div class="progress">
-          <span id="progress-info">0/0</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="prompt">
-          <button id="btn-speak">🔊 朗讀單字</button>
-          <button id="btn-hint" class="ghost">💡 提示</button>
-          <div id="hint" class="hint hidden"></div>
-          <button id="btn-record">🎙️ 錄音</button>
-<button id="btn-stop" class="ghost">⏹ 停止錄音</button>
+        <div id="week-selection" class="section">
+            <h2>週次選擇</h2>
+            <select id="week-select"></select>
         </div>
 
-        <div class="input-row">
-          <input id="answer" placeholder="輸入拼字…" autocomplete="off" />
-          <button id="btn-submit">確認</button>
+        <div id="quiz-area" class="section">
+            <h2>拼字練習</h2>
+            <div id="word-display">請選擇週次並點擊「下一題」開始</div>
+            <div id="chinese-display"></div>
+
+            <div id="input-container">
+                <input type="text" id="spelling-input" placeholder="請輸入單字拼法" disabled>
+                <button id="submit-btn" class="primary-btn" disabled>送出答案</button>
+            </div>
+
+            <button id="repeat-btn" class="secondary-btn" disabled>再聽一次</button>
+            <button id="next-btn" class="primary-btn" disabled>下一題</button>
+
+            <div id="message-area"></div>
+
+            <div id="recording-section">
+                <h4>錄音/提示</h4>
+                <div id="recording-controls">
+                    <button id="record-btn" class="action-btn" disabled>🔴 錄音提示 (模擬)</button>
+                    <button id="play-record-btn" disabled>▶ 播放提示 (模擬)</button>
+                </div>
+                <div id="user-hint"></div>
+            </div>
+
         </div>
 
-        <div id="feedback" class="feedback"></div>
-        <div class="controls">
-          <button id="btn-next" class="hidden">下一題 →</button>
+        <div id="shop-area" class="section" style="display: none;">
+            <h2>🎆 商店</h2>
+            <div id="shop-list">
+                </div>
         </div>
-      </div>
-    </section>
-  </main>
 
-  <dialog id="store-modal">
-    <form method="dialog" class="store">
-      <header>
-        <h3>單字幣商店</h3>
-        <span>餘額：🪙 <b id="store-balance">0</b></span>
-      </header>
-      <div class="store-items">
-        <div class="item">
-          <div class="item-info">
-            <h4>🎆 煙火特效</h4>
-            <p>答對後放煙火慶祝！</p>
-          </div>
-          <div class="item-cta">
-            <span class="price">🪙 50</span>
-            <button data-buy="fireworks">購買</button>
-            <span class="owned hidden">已擁有 ✓</span>
-          </div>
+    </div>
+
+    <div id="rules-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>金幣獲取規則</h3>
+            <ul>
+                <li>每題答對：**+1 幣**</li>
+                <li>答錯：**不扣分**</li>
+                <li>連續答對 Bonus:</li>
+                <ul>
+                    <li>連 3 題：額外 **+1 幣**</li>
+                    <li>連 5 題：額外 **+3 幣**</li>
+                    <li>連 10 題：額外 **+5 幣**</li>
+                    <li>連 20 題：額外 **+10 幣**</li>
+                </ul>
+            </ul>
         </div>
-        <div class="item">
-          <div class="item-info">
-            <h4>🎤 語音增強包</h4>
-            <p>解鎖更自然的語速與音效</p>
-          </div>
-          <div class="item-cta">
-            <span class="price">🪙 30</span>
-            <button data-buy="voicepack">購買</button>
-            <span class="owned hidden">已擁有 ✓</span>
-          </div>
-        </div>
-      </div>
-      <footer>
-        <button class="ghost">關閉</button>
-      </footer>
-    </form>
-  </dialog>
+    </div>
 
-  <canvas id="fx" class="hidden"></canvas>
+    <script>
+        // JavaScript 邏輯
 
-  <!-- 🐝 自動載入 JS -->
-  <script>
-    const JS_VERSION = Date.now(); // 防快取版本號
-    const scripts = ["wordlists/weeks.js", "fireworks.js", "storage.js", "main.js"];
+        const wordList = {
+            'Week 1': [
+                ['bank', '銀行'], ['camp', '露營'], ['hand', '手'], ['paint', '油漆'], ['plant', '植物'], 
+                ['pond', '池塘'], ['pump', '幫浦'], ['stamp', '郵票'], ['stand', '站立'], ['stump', '樹樁'], 
+                ['wind', '風'], ['wink', '眨眼'], ['hungry', '飢餓的'], ['lapping', '舔、拍打（水）'], ['milk', '牛奶'], 
+                ['quiet', '安靜的'], ['television', '電視'], ['backyard', '後院'], ['basement', '地下室'], 
+                ['clean', '打掃'], ['fly up', '飛起來'], ['keep-away', '躲避遊戲'], ['near', '近的'], ['upstairs', '樓上']
+            ],
+            'Week 2': [
+                ['belt', '皮帶'], ['elf', '小精靈'], ['gift', '禮物'], ['golf', '高爾夫'], ['left', '左邊'], 
+                ['lift', '提起'], ['melt', '融化'], ['quilt', '棉被'], ['raft', '木筏'], ['shelf', '架子'], 
+                ['wilt', '枯萎'], ['wolf', '狼'], ['came', '來了'], ['bait', '餌'], ['rake', '耙子'], 
+                ['hay', '乾草'], ['plate', '盤子'], ['pail', '水桶'], ['cane', '拐杖'], ['raise', '舉起'], 
+                ['grape', '葡萄'], ['say', '說'], ['aid', '幫助'], ['pain', '疼痛'], ['trail', '小徑'], 
+                ['stain', '汙漬'], ['blaze', '火焰'], ['almost', '幾乎'], ['dishes', '盤子'], ['everyone', '每個人'], 
+                ['family', '家人'], ['later', '之後'], ['soup', '湯'], ['still', '仍然'], ['together', '一起'], 
+                ['window', '窗戶'], ['children', '孩子們'], ['collar', '領子'], ['heel', '腳跟'], ['hurt', '受傷'], 
+                ['in front of', '在…前面'], ['lean', '傾斜'], ['pet store', '寵物店'], ['snort', '噴鼻息']
+            ],
+            'Week 3': [
+                ['scrape', '刮'], ['scratch', '抓'], ['screen', '螢幕'], ['scrub', '用力擦'], ['splash', '濺起'], 
+                ['split', '分開'], ['sprain', '扭傷'], ['spray', '噴灑'], ['spring', '春天 / 彈簧'], ['strap', '皮帶'], 
+                ['stripes', '條紋'], ['strong', '強壯的'], ['deep', '深的'], ['meal', '一餐'], ['sheep', '羊'], 
+                ['each', '每一個'], ['wheel', '輪子'], ['treat', '招待'], ['bean', '豆子'], ['seen', '看見（過去分詞）'], 
+                ['team', '團隊'], ['dream', '夢'], ['mean', '意思是'], ['leave', '離開'], ['cream', '奶油'], 
+                ['sleep', '睡覺'], ['sneeze', '打噴嚏'], ['copies', '副本'], ['enough', '足夠'], ['library', '圖書館'], 
+                ['number', '數字'], ['prizes', '獎品'], ['ribbon', '緞帶'], ['ring', '戒指'], ['rope', '繩子'], 
+                ['sign', '標誌'], ['tonight', '今晚'], ['happen', '發生'], ['miss', '想念'], ['nice', '好的'], 
+                ['steps', '階梯'], ['terrible', '可怕的']
+            ],
+            'Week 4': [
+                ['knee', '膝蓋'], ['kneel', '跪下'], ['knife', '刀'], ['knit', '編織'], ['knob', '圓形把手'], 
+                ['knock', '敲'], ['knot', '結'], ['wrap', '包起來'], ['wreath', '花圈'], ['wrench', '扳手'], 
+                ['wrist', '手腕'], ['write', '寫'], ['wrong', '錯的'], ['shy', '害羞的'], ['right', '正確的 / 右邊'], 
+                ['wide', '寬的'], ['light', '光 / 輕的'], ['pine', '松樹'], ['fight', '打架'], ['fly', '飛'], 
+                ['night', '夜晚'], ['dry', '乾的'], ['sight', '視線'], ['might', '可能'], ['tight', '緊的'], 
+                ['stripe', '條紋'], ['sly', '狡猾的'], ['cry', '哭'], ['basket', '籃子'], ['bend down', '彎下'], 
+                ['kind', '親切的 / 種類'], ['wave', '揮手 / 波浪'], ['enter', '進入'], ['never', '從不'], 
+                ['picture', '圖片'], ['proud', '驕傲的'], ['shiny', '閃亮的'], ['spray', '噴灑']
+            ],
+            'Week 5': [
+                ['brick', '磚'], ['check', '檢查'], ['chick', '小雞'], ['clock', '時鐘'], ['duck', '鴨子'], 
+                ['lock', '鎖'], ['pocket', '口袋'], ['rack', '架子'], ['rock', '岩石'], ['rocket', '火箭'], 
+                ['snack', '點心'], ['thick', '厚'], ['track', '軌道'], ['poke', '戳'], ['boat', '船'], 
+                ['row', '划船'], ['goat', '山羊'], ['snow', '雪'], ['toad', '蟾蜍'], ['soap', '肥皂'], 
+                ['blow', '吹'], ['coat', '外套'], ['tow', '拖拉'], ['coach', '教練'], ['float', '漂浮'], 
+                ['toast', '吐司'], ['slow', '慢的'], ['globe', '地球'], ['at once', '立刻'], ['dog toys', '狗玩具'], 
+                ['guess', '猜'], ['inside', '裡面'], ['judge', '評判'], ['place', '地方']
+            ],
+            'Week 6': [
+                ['bright', '明亮的'], ['caught', '抓到'], ['eight', '八'], ['flight', '飛行'], ['high', '高的'], 
+                ['knight', '騎士'], ['light', '光'], ['night', '夜晚'], ['right', '正確的'], ['sign', '標誌'], 
+                ['sight', '視力'], ['straight', '直的'], ['tight', '緊的'], ['tune', '曲子'], ['moon', '月亮'], 
+                ['pool', '游泳池'], ['zoo', '動物園'], ['rude', '粗魯的'], ['soon', '很快'], ['boot', '長靴'], 
+                ['food', '食物'], ['tube', '管子'], ['room', '房間'], ['moose', '麋鹿'], ['goose', '鵝'], 
+                ['zoom', '嗖地飛'], ['balloon', '氣球'], ['shoot', '射擊'], ['a can of', '一罐'], ['enter', '進入'], 
+                ['first', '第一'], ['glitter', '閃光'], ['gold', '金子'], ['prizes', '獎品'], ['second', '第二'], 
+                ['sign up', '報名'], ['surely', '當然'], ['third', '第三'], ['look at', '看著'], ['no cost', '免費'], 
+                ['nod', '點頭'], ['paste', '黏貼'], ['permission', '許可']
+            ],
+            'Week 7': [
+                ['basement', '地下室'], ['bright-eyed', '眼神明亮的'], ['lean', '傾斜'], ['past', '過去'], 
+                ['wrong', '錯的'], ['remember', '記得'], ['clap', '拍手'], ['crowd', '人群'], ['hug', '擁抱'], 
+                ['nervous', '緊張的'], ['people', '人們'], ['ring', '戒指 / 鈴聲']
+            ],
+            'Week 8': [
+                ['different', '不同的'], ['hold up', '舉起'], ['lay down', '躺下'], ['other', '其他的'], 
+                ['racehorse', '賽馬'], ['win', '贏'], ['winner', '勝利者']
+            ],
+            'Week 9': [
+                ['what', '什麼'], ['clash', '衝突'], ['shock', '震驚'], ['while', '當…時'], ['shame', '可惜'], 
+                ['flash', '閃光'], ['where', '哪裡'], ['shine', '發亮'], ['why', '為什麼'], ['shore', '海岸'], 
+                ['shall', '將要'], ['share', '分享'], ['shadow', '影子'], ['whisper', '低語'], ['whiskers', '鬍鬚'], 
+                ['different', '不同的'], ['hold up', '舉起'], ['lay down', '躺下'], ['other', '其他的'], 
+                ['racehorse', '賽馬'], ['win', '贏'], ['winner', '優勝者'], ['braid', '辮子'], ['chain', '鍊條'], 
+                ['hay', '乾草'], ['mail', '郵件'], ['pail', '水桶'], ['paint', '油漆'], ['pay', '付錢'], 
+                ['rain', '雨'], ['sail', '帆 / 航行'], ['stain', '汙漬'], ['train', '火車'], ['tray', '托盤'], 
+                ['beads', '珠子'], ['bean', '豆子'], ['beef', '牛肉'], ['bread', '麵包'], ['head', '頭'], 
+                ['heel', '腳跟'], ['leaf', '葉子'], ['screen', '螢幕'], ['seat', '座位'], ['steam', '蒸氣'], 
+                ['thread', '線'], ['tree', '樹'], ['climb', '爬'], ['myself', '我自己'], ['practice', '練習'], 
+                ['track', '軌道'], ['uncle', '叔叔'], ['whiskers', '鬍鬚']
+            ],
+            'Week 10': [
+                ['braid', '辮子'], ['chain', '鍊條'], ['hay', '乾草'], ['nail', '指甲 / 釘子'], ['pail', '水桶'], 
+                ['paint', '油漆'], ['pay', '付錢'], ['rain', '雨'], ['sail', '航行'], ['stain', '汙點'], 
+                ['beads', '珠子'], ['bean', '豆子'], ['beef', '牛肉'], ['bead', '珠子'], ['head', '頭'], 
+                ['heel', '腳跟'], ['leaf', '葉子'], ['screen', '螢幕'], ['seat', '座位'], ['steam', '蒸氣'], 
+                ['thread', '線'], ['tree', '樹'], ['climb', '爬'], ['myself', '我自己'], ['practice', '練習'], 
+                ['track', '軌道'], ['uncle', '叔叔'], ['whiskers', '鬍鬚'], ['wrote', '寫了'], ['clover', '酢漿草'], 
+                ['danger', '危險'], ['field', '田野'], ['noise', '噪音'], ['pass', '經過'], ['rest', '休息'], 
+                ['rumble', '隆隆聲'], ['sky', '天空'], ['thunder', '雷']
+            ],
+            'Week 11': [
+                ['blow', '吹'], ['bowl', '碗'], ['crow', '烏鴉'], ['goat', '山羊'], ['pillow', '枕頭'], 
+                ['road', '道路'], ['snow', '雪'], ['soap', '肥皂'], ['throw', '丟'], ['toad', '蟾蜍'], 
+                ['toast', '吐司'], ['window', '窗戶'], ['bath', '洗澡'], ['peach', '桃子'], ['tooth', '牙齒'], 
+                ['thin', '瘦的'], ['choke', '噎到'], ['much', '很多'], ['with', '和'], ['chick', '小雞'], 
+                ['teach', '教'], ['thank', '感謝'], ['child', '小孩'], ['chore', '家事'], ['reach', '到達'], 
+                ['thick', '厚'], ['think', '思考'], ['carrot', '胡蘿蔔'], ['cool', '涼的'], ['gloves', '手套'], 
+                ['haircut', '理髮'], ['patch', '補丁'], ['pond', '池塘'], ['spring', '春天'], ['voice', '聲音'], 
+                ['wool', '羊毛'], ['acorn', '橡子'], ['angry', '生氣的'], ['as fast as', '盡可能快'], ['bless', '祝福'], 
+                ['chattering', '喋喋不休'], ['dig', '挖'], ['hill', '小山'], ['oak', '橡樹'], ['squirrel', '松鼠'], 
+                ['thief', '小偷'], ['tiny', '很小的']
+            ],
+            'Week 12': [
+                ['boot', '長靴'], ['cook', '煮'], ['hood', '帽兜'], ['hook', '鉤子'], ['hoop', '圈'], 
+                ['moose', '麋鹿'], ['pool', '游泳池'], ['school', '學校'], ['shook', '搖動（過去式）'], 
+                ['spoon', '湯匙'], ['stood', '站立（過去式）'], ['stool', '凳子'], ['cause', '原因'], 
+                ['claw', '爪'], ['crawl', '爬行'], ['draw', '畫'], ['faucet', '水龍頭'], ['fawn', '小鹿'], 
+                ['laundry', '洗衣'], ['paw', '爪子'], ['sauce', '醬汁'], ['shawl', '披巾'], 
+                ['straw', '吸管 / 稻草'], ['yawn', '打哈欠'], ['behind', '在後面'], ['berry', '漿果'], 
+                ['branches', '樹枝'], ['bushy tail', '毛茸茸的尾巴'], ['dance', '跳舞'], ['flag', '旗子'], 
+                ['insect', '昆蟲'], ['quick', '快的'], ['skunk', '臭鼬'], ['suddenly', '突然地']
+            ],
+            'Week 13': [
+                ['blew', '吹了'], ['chew', '咀嚼'], ['dew', '露水'], ['few', '少數'], ['flew', '飛了'], 
+                ['grew', '成長'], ['jewelry', '珠寶'], ['mew', '貓叫'], ['new', '新的'], ['screw', '螺絲'], 
+                ['stew', '燉菜'], ['threw', '丟了'], ['art', '藝術'], ['yard', '院子'], ['barn', '穀倉'], 
+                ['park', '公園'], ['hard', '困難的'], ['cart', '手推車'], ['dark', '黑暗'], ['farm', '農場'], 
+                ['shark', '鯊魚'], ['sharp', '銳利的'], ['harm', '傷害'], ['alarm', '鬧鐘'], ['arms', '手臂'], 
+                ['march', '三月 / 行進'], ['smart', '聰明的'], ['buzzing', '嗡嗡聲'], ['careful', '小心的'], 
+                ['fur', '毛'], ['hit', '打'], ['hole', '洞'], ['honey', '蜂蜜'], ['lick', '舔'], ['path', '小路'], 
+                ['sting', '螫'], ['stuck', '卡住的'], ['against', '反對'], ['hardly', '幾乎不'], ['meadow', '草地'], 
+                ['middle', '中間'], ['pit-pat', '噠噠聲'], ['space', '空間'], ['toss', '丟'], ['touch', '觸碰'], 
+                ['whistle', '口哨']
+            ],
+            // Week 14 missing in provided list, skipping to Week 15
+            'Week 15': [
+                ['baby', '嬰兒'], ['bunny', '小兔子'], ['city', '城市'], ['cry', '哭'], ['dry', '乾的'], 
+                ['fly', '飛'], ['fry', '炸'], ['happy', '快樂的'], ['party', '派對'], ['pony', '小馬'], 
+                ['silly', '傻的'], ['sky', '天空'], ['story', '故事'], ['chain', '鏈子'], ['chop', '切'], 
+                ['shed', '棚子'], ['shelf', '架子'], ['thick', '厚'], ['thin', '瘦的'], ['think', '思考'], 
+                ['thread', '線'], ['three', '三'], ['throat', '喉嚨'], ['whale', '鯨魚'], ['wheel', '輪子'], 
+                ['shines', '發光'], ['through', '穿過'], ['bouncing', '彈跳的'], ['spider', '蜘蛛'], ['webs', '網'], 
+                ['woods', '樹林'], ['glass', '玻璃'], ['tied together', '綁在一起'], ['drop', '掉下'], 
+                ['straight', '直的'], ['friendly', '友善的'], ['bless', '祝福'], ['blink', '眨眼'], ['crawl', '爬'], 
+                ['flat', '平的'], ['follow', '跟隨'], ['join', '加入'], ['rock', '岩石'], ['star', '星星'], 
+                ['swish', '唰地一聲']
+            ],
+            'Week 16': [
+                ['bath', '洗澡'], ['bench', '長凳'], ['branch', '樹枝'], ['brush', '刷子'], ['dish', '盤子'], 
+                ['ditch', '溝渠'], ['path', '小徑'], ['ring', '戒指'], ['swing', '盪鞦韆'], ['switch', '開關'], 
+                ['teeth', '牙齒'], ['watch', '手錶'], ['bird', '鳥'], ['more', '更多'], ['shirt', '襯衫'], 
+                ['horse', '馬'], ['first', '第一'], ['for', '為了'], ['girl', '女孩'], ['horn', '角'], 
+                ['dirt', '泥土'], ['short', '短的'], ['store', '商店'], ['morning', '早晨'], ['dinosaur', '恐龍'], 
+                ['third', '第三'], ['whirl', '旋轉'], ['appear', '出現'], ['decide', '決定'], ['furry', '毛茸茸的'], 
+                ['sister', '姐妹'], ['strange', '奇怪的'], ['tease', '取笑']
+            ],
+            'Week 17': [
+                ['barn', '穀倉'], ['card', '卡片'], ['dart', '飛鏢'], ['fern', '蕨類'], ['harp', '豎琴'], 
+                ['ladder', '梯子'], ['letter', '信'], ['number', '數字'], ['paper', '紙'], ['shark', '鯊魚'], 
+                ['slipper', '拖鞋'], ['water', '水'], ['yard', '院子'], ['flutter', '拍動'], ['flyer', '傳單'], 
+                ['minute', '分鐘'], ['nearby', '附近'], ['reach', '到達'], ['seem', '似乎'], ['throat', '喉嚨'], 
+                ['hummingbird', '蜂鳥'], ['afraid', '害怕'], ['exclaimed', '驚呼'], ['frightened', '害怕的'], 
+                ['lift', '抬起'], ['shut', '關上'], ['stretch', '伸展'], ['wide', '寬的']
+            ],
+            'Week 18': [
+                ['cork', '軟木塞'], ['corn', '玉米'], ['dirt', '泥土'], ['fork', '叉子'], ['horn', '角'], 
+                ['shirt', '襯衫'], ['short', '短的'], ['skirt', '裙子'], ['squirt', '噴出'], ['stir', '攪拌'], 
+                ['storm', '暴風雨'], ['third', '第三'], ['thorn', '荊棘'], ['burn', '燒'], ['curb', '路邊'], 
+                ['curl', '捲曲'], ['fur', '毛'], ['hurt', '受傷'], ['turn', '轉彎'], ['does', '做（第三人稱）'], 
+                ['were', '是（過去式）'], ['every', '每個'], ['very', '非常'], ['give', '給'], ['live', '生活'], 
+                ['thing', '東西'], ['your', '你的'], ['many', '許多'], ['who', '誰'], ['any', '任何'], 
+                ['away', '離開'], ['goes', '去（第三人稱）'], ['find', '找到'], ['kind', '種類 / 好的'], 
+                ['ago', '以前'], ['another', '另一個'], ['corner', '角落'], ['everywhere', '到處'], ['fold', '摺'], 
+                ['important', '重要的'], ['mouse', '老鼠'], ['neck', '脖子'], ['owl', '貓頭鷹'], ['sharp', '銳利的'], 
+                ['size', '尺寸'], ['supper', '晚餐'], ['argue', '爭吵'], ['bright', '明亮的'], ['button', '鈕扣'], 
+                ['chuckle', '輕笑'], ['ladybug', '瓢蟲'], ['prettiest', '最漂亮的'], ['shout', '叫喊'], 
+                ['spots', '斑點'], ['whole', '整個的']
+            ]
+        };
 
-    const loading = document.createElement("div");
-    loading.id = "loading-status";
-    loading.style = `
-      position: fixed; bottom: 10px; left: 10px;
-      background: rgba(0,0,0,0.7); color: #0f0;
-      font-family: monospace; padding: 6px 10px; border-radius: 5px;
-      font-size: 0.85rem; z-index: 9999;
-    `;
-    loading.textContent = "🐝 正在載入...";
-    document.body.appendChild(loading);
+        const storeItems = [
+            { id: 1, name: "⭐ 閃亮煙火包", cost: 10, description: "解鎖煙火動畫，答對時隨機播放！" },
+            { id: 2, name: "🤖 機器人語音包", cost: 5, description: "將朗讀語音換成有趣的機器人聲！" },
+            { id: 3, name: "🎩 神秘帽造型", cost: 15, description: "解鎖 Pierce 專屬網站神秘帽視覺" },
+            { id: 4, name: "🎉 派對背景主題", cost: 20, description: "變更網站背景顏色與樣式" },
+            { id: 5, name: "🎵 勝利音效包", cost: 8, description: "更換答對時的音效" },
+        ];
 
-    // 依序載入腳本
-    function loadScript(i = 0) {
-      if (i >= scripts.length) {
-        loading.textContent = `🟢 所有 JS 已載入 (${JS_VERSION})`;
-        return;
-      }
-      const s = document.createElement("script");
-      s.src = `${scripts[i]}?v=${JS_VERSION}`;
-      s.onload = () => {
-        loading.textContent = `✅ 已載入 ${scripts[i]}`;
-        loadScript(i + 1);
-      };
-      s.onerror = () => {
-        loading.textContent = `❌ 無法載入 ${scripts[i]}`;
-      };
-      document.body.appendChild(s);
-    }
+        // 狀態變量
+        let currentCoins = 0;
+        let streak = 0;
+        let currentWeekWords = [];
+        let currentWordIndex = -1;
+        let currentWord = '';
+        let currentChinese = '';
+        let quizState = 'pending'; // 'pending', 'answering', 'answered'
+        let purchasedItems = new Set();
+        let userRecordedHint = {}; // 儲存 { word: 'hint_text' }
 
-    document.addEventListener("DOMContentLoaded", () => loadScript());
-  </script>
+        // DOM 元素
+        const weekSelect = document.getElementById('week-select');
+        const coinDisplay = document.getElementById('current-coins');
+        const streakDisplay = document.getElementById('streak-count');
+        const wordDisplay = document.getElementById('word-display');
+        const chineseDisplay = document.getElementById('chinese-display');
+        const input = document.getElementById('spelling-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const repeatBtn = document.getElementById('repeat-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const messageArea = document.getElementById('message-area');
+        const recordBtn = document.getElementById('record-btn');
+        const playRecordBtn = document.getElementById('play-record-btn');
+        const shopArea = document.getElementById('shop-area');
+        const shopList = document.getElementById('shop-list');
+        const shopBtn = document.getElementById('shop-btn');
+        const rulesModal = document.getElementById('rules-modal');
+        const ruleBtn = document.getElementById('rule-btn');
+        const modalClose = document.getElementsByClassName('close')[0];
+        const userHintDisplay = document.getElementById('user-hint');
+
+        // 初始化
+        function init() {
+            loadState();
+            populateWeekSelect();
+            updateStatsDisplay();
+            setupEventListeners();
+            renderShop();
+            setupVoiceSelection(); // 確保語音合成對象可用
+        }
+
+        // 載入/儲存狀態 (使用 localStorage 實現離線持久化)
+        function saveState() {
+            localStorage.setItem('pierce_coins', currentCoins);
+            localStorage.setItem('pierce_streak', streak);
+            localStorage.setItem('pierce_purchased', JSON.stringify(Array.from(purchasedItems)));
+            localStorage.setItem('pierce_hints', JSON.stringify(userRecordedHint));
+        }
+
+        function loadState() {
+            currentCoins = parseInt(localStorage.getItem('pierce_coins') || '0');
+            streak = parseInt(localStorage.getItem('pierce_streak') || '0');
+            const savedPurchased = localStorage.getItem('pierce_purchased');
+            if (savedPurchased) {
+                purchasedItems = new Set(JSON.parse(savedPurchased));
+            }
+            const savedHints = localStorage.getItem('pierce_hints');
+            if (savedHints) {
+                userRecordedHint = JSON.parse(savedHints);
+            }
+        }
+
+        // 填充週次選擇下拉菜單
+        function populateWeekSelect() {
+            let options = '<option value="">-- 請選擇週次 --</option>';
+            for (let i = 1; i <= 18; i++) {
+                if (wordList[`Week ${i}`]) {
+                    options += `<option value="Week ${i}">Week ${i}</option>`;
+                }
+            }
+            weekSelect.innerHTML = options;
+        }
+
+        // 設置事件監聽器
+        function setupEventListeners() {
+            weekSelect.addEventListener('change', startNewWeek);
+            nextBtn.addEventListener('click', loadNextWord);
+            repeatBtn.addEventListener('click', () => speakWord(currentWord));
+            submitBtn.addEventListener('click', checkSpelling);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && quizState === 'answering') {
+                    checkSpelling();
+                }
+            });
+            shopBtn.addEventListener('click', toggleShop);
+            ruleBtn.addEventListener('click', () => rulesModal.style.display = 'block');
+            modalClose.addEventListener('click', () => rulesModal.style.display = 'none');
+            window.addEventListener('click', (event) => {
+                if (event.target === rulesModal) {
+                    rulesModal.style.display = 'none';
+                }
+            });
+
+            // 錄音/播放 (模擬功能)
+            recordBtn.addEventListener('click', simulateRecordHint);
+            playRecordBtn.addEventListener('click', playRecordedHint);
+        }
+
+        // 語音朗讀設置
+        let speaker = null;
+        let voice = null;
+        function setupVoiceSelection() {
+             speaker = window.speechSynthesis;
+             // 嘗試選擇一個英文女聲或男聲
+             speaker.onvoiceschanged = () => {
+                const voices = speaker.getVoices();
+                voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google US English')); // 優先選擇
+                if (!voice) {
+                    voice = voices.find(v => v.lang.startsWith('en')); // 備用
+                }
+                // 如果購買了機器人語音包，可以嘗試設置不同的 voice
+                if (purchasedItems.has(2)) {
+                    voice = voices.find(v => v.name.includes('Robot') || v.name.includes('Vicki') || v.name.includes('Alex'));
+                }
+             };
+             // 立即嘗試獲取，以防事件沒有觸發
+             const voices = speaker.getVoices();
+             if(voices.length > 0) setupVoiceSelection();
+        }
+
+
+        // 朗讀單字 (TTS)
+        function speakWord(word) {
+            if (!speaker) {
+                messageArea.innerHTML = '<div class="error-msg">語音合成不可用，請檢查瀏覽器設定。</div>';
+                return;
+            }
+            if (speaker.speaking) {
+                speaker.cancel();
+            }
+            const utterance = new SpeechSynthesisUtterance(word);
+            utterance.lang = 'en-US';
+            if (voice) {
+                utterance.voice = voice;
+            } else {
+                // 如果沒有找到特定 voice，使用預設值
+                utterance.pitch = purchasedItems.has(2) ? 0.5 : 1; // 機器人聲調
+                utterance.rate = purchasedItems.has(2) ? 0.9 : 1; // 機器人速度
+            }
+            speaker.speak(utterance);
+        }
+
+        // 開始新的週次
+        function startNewWeek() {
+            const selectedWeek = weekSelect.value;
+            if (!selectedWeek) {
+                currentWeekWords = [];
+                resetQuizArea();
+                wordDisplay.textContent = '請選擇週次並點擊「下一題」開始';
+                nextBtn.disabled = true;
+                return;
+            }
+            currentWeekWords = [...wordList[selectedWeek]]; // 複製陣列，避免修改原始數據
+            shuffleArray(currentWeekWords);
+            currentWordIndex = -1;
+            resetQuizArea();
+            wordDisplay.textContent = `${selectedWeek} 已載入。準備好了嗎？`;
+            nextBtn.disabled = false;
+        }
+
+        // 載入下一題
+        function loadNextWord() {
+            if (currentWeekWords.length === 0) {
+                wordDisplay.textContent = '本週單字已全部完成！請選擇其他週次。';
+                chineseDisplay.textContent = '';
+                resetQuizArea();
+                nextBtn.disabled = true;
+                return;
+            }
+
+            // 重置狀態
+            resetQuizArea();
+            quizState = 'answering';
+
+            // 取得下一組單字
+            currentWordIndex = (currentWordIndex + 1) % currentWeekWords.length;
+            const [word, chinese] = currentWeekWords[currentWordIndex];
+            currentWord = word.toLowerCase(); // 轉換為小寫以確保檢查一致性
+            currentChinese = chinese;
+
+            // 顯示與控制
+            wordDisplay.textContent = '🎧 正在朗讀...';
+            chineseDisplay.textContent = ''; // 隱藏中文
+            input.value = '';
+            input.disabled = false;
+            submitBtn.disabled = false;
+            repeatBtn.disabled = false;
+            nextBtn.disabled = true;
+            
+            // 自動朗讀
+            speakWord(currentWord);
+
+            // 檢查是否有錄音提示
+            if (userRecordedHint[currentWord]) {
+                userHintDisplay.innerHTML = `**您的提示：** <span style="color: blue;">"${userRecordedHint[currentWord]}"</span>`;
+                playRecordBtn.disabled = false;
+            } else {
+                userHintDisplay.innerHTML = '您還沒有為這個詞錄製提示。';
+                playRecordBtn.disabled = true;
+            }
+            recordBtn.disabled = false;
+
+            wordDisplay.textContent = '❓ 請拼寫單字...';
+        }
+
+        // 檢查拼寫
+        function checkSpelling() {
+            if (quizState !== 'answering') return;
+
+            const answer = input.value.trim().toLowerCase();
+            const correctWord = currentWord;
+
+            if (answer === correctWord) {
+                // 答對
+                quizState = 'answered';
+                
+                // 計算金幣
+                const coinsEarned = calculateCoins();
+                currentCoins += coinsEarned;
+                streak++;
+                
+                // 顯示結果
+                wordDisplay.textContent = `✅ 正確拼字: ${correctWord}`;
+                chineseDisplay.textContent = `中文: ${currentChinese}`;
+                messageArea.innerHTML = `<div class="success-msg">恭喜！答對了！🎉 獲得 ${coinsEarned} 幣。連續答對 ${streak} 題！</div>`;
+                
+                // 視覺效果 (煙火/音效)
+                applyShopEffects('win');
+
+                // 更新狀態和控制
+                updateStatsDisplay();
+                saveState();
+                disableQuizControls(true);
+
+            } else {
+                // 答錯
+                streak = 0; // 連續答對歸零
+                updateStatsDisplay();
+                messageArea.innerHTML = '<div class="error-msg">❌ 答錯了，請再試一次！</div>';
+                input.value = ''; // 清空輸入框
+                input.focus(); // 保持焦點
+            }
+        }
+
+        // 計算金幣
+        function calculateCoins() {
+            let baseCoin = 1;
+            let bonusCoin = 0;
+
+            // 連續答對 bonus 機制：這裡計算的是「如果這次答對，將會達到的連續答對數」
+            const newStreak = streak + 1;
+
+            if (newStreak >= 20 && newStreak % 20 === 0) {
+                 bonusCoin = 10;
+            } else if (newStreak >= 10 && newStreak % 10 === 0) {
+                 bonusCoin = 5;
+            } else if (newStreak >= 5 && newStreak % 5 === 0) {
+                bonusCoin = 3;
+            } else if (newStreak >= 3 && newStreak % 3 === 0) {
+                bonusCoin = 1;
+            }
+
+            return baseCoin + bonusCoin;
+        }
+
+        // 重置測驗區域
+        function resetQuizArea() {
+            quizState = 'pending';
+            currentWord = '';
+            currentChinese = '';
+            wordDisplay.textContent = '請點擊「下一題」開始';
+            chineseDisplay.textContent = '';
+            input.value = '';
+            messageArea.innerHTML = '';
+            userHintDisplay.innerHTML = '';
+            disableQuizControls(false);
+        }
+
+        // 禁用/啟用測驗控制項
+        function disableQuizControls(isAnswered) {
+            input.disabled = isAnswered;
+            submitBtn.disabled = isAnswered;
+            repeatBtn.disabled = isAnswered;
+            nextBtn.disabled = !isAnswered && currentWeekWords.length > 0;
+            recordBtn.disabled = isAnswered;
+            playRecordBtn.disabled = isAnswered;
+
+            if (!isAnswered && weekSelect.value) {
+                // 準備答題
+                input.disabled = false;
+                submitBtn.disabled = false;
+                repeatBtn.disabled = false;
+            } else if (!weekSelect.value) {
+                 // 尚未選擇週次
+                 nextBtn.disabled = true;
+            } else if (currentWeekWords.length === 0) {
+                nextBtn.disabled = true;
+            }
+        }
+
+        // 更新頂部狀態欄
+        function updateStatsDisplay() {
+            coinDisplay.textContent = currentCoins;
+            streakDisplay.textContent = streak;
+        }
+
+        // 混洗陣列 (Fisher-Yates)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // 商店功能
+        function renderShop() {
+            shopList.innerHTML = '';
+            storeItems.forEach(item => {
+                const isPurchased = purchasedItems.has(item.id);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'shop-item';
+                itemDiv.innerHTML = `
+                    <div class="item-info">
+                        <h4>${item.name} ${isPurchased ? '(已擁有)' : ''}</h4>
+                        <p>${item.description}</p>
+                    </div>
+                    ${isPurchased 
+                        ? '<button disabled>已購買</button>' 
+                        : `<button class="buy-btn" data-id="${item.id}" data-cost="${item.cost}">購買 (${item.cost} 💰)</button>`
+                    }
+                `;
+                shopList.appendChild(itemDiv);
+            });
+
+            // 為新的購買按鈕添加事件監聽器
+            shopList.querySelectorAll('.buy-btn:not([disabled])').forEach(button => {
+                button.addEventListener('click', buyItem);
+            });
+        }
+
+        function buyItem(event) {
+            const id = parseInt(event.target.getAttribute('data-id'));
+            const cost = parseInt(event.target.getAttribute('data-cost'));
+            const item = storeItems.find(i => i.id === id);
+
+            if (currentCoins >= cost) {
+                currentCoins -= cost;
+                purchasedItems.add(id);
+                updateStatsDisplay();
+                saveState();
+                renderShop();
+                alert(`恭喜您購買了 ${item.name}！🎉`);
+                
+                // 執行購買後的動作 (例如：更新語音設定)
+                if (id === 2) { // 機器人語音包
+                     setupVoiceSelection();
+                }
+
+            } else {
+                alert(`金幣不足！您需要 ${cost} 幣才能購買 ${item.name}。`);
+            }
+        }
+
+        function toggleShop() {
+            if (shopArea.style.display === 'none') {
+                shopArea.style.display = 'block';
+                renderShop(); // 每次開啟都重新渲染以更新狀態
+            } else {
+                shopArea.style.display = 'none';
+            }
+        }
+
+        // 模擬錄音功能
+        function simulateRecordHint() {
+             if (!currentWord) return;
+             const hint = prompt(`請為單字「${currentWord}」錄製/輸入一個提示 (例如：媽媽說的中文，或一個小故事)：`);
+             if (hint && hint.trim()) {
+                 userRecordedHint[currentWord] = hint.trim();
+                 userHintDisplay.innerHTML = `**您的提示：** <span style="color: blue;">"${hint.trim()}"</span> (已儲存)`;
+                 playRecordBtn.disabled = false;
+                 saveState();
+                 alert(`提示已為「${currentWord}」儲存！`);
+             }
+        }
+
+        function playRecordedHint() {
+            if (userRecordedHint[currentWord]) {
+                alert(`播放提示 (模擬)：\n\n${userRecordedHint[currentWord]}`);
+            } else {
+                alert('這個單字沒有錄製提示。');
+            }
+        }
+
+        // 應用商店效果
+        function applyShopEffects(type) {
+             if (type === 'win' && purchasedItems.has(1)) { // 閃亮煙火包
+                 // 簡單模擬煙火效果
+                 const fireworks = ['✨', '💥', '🎆', '💫', '🌟'];
+                 const effect = fireworks[Math.floor(Math.random() * fireworks.length)];
+                 messageArea.innerHTML += ` ${effect}`;
+             }
+             if (type === 'win' && purchasedItems.has(5)) { // 勝利音效包
+                  // 播放自定義音效（需要音頻文件，這裡僅模擬）
+                  console.log('播放勝利音效！');
+             }
+             if (purchasedItems.has(3)) { // 神秘帽造型
+                 document.querySelector('#header').style.backgroundColor = '#6A1B9A'; // 變更顏色模擬造型
+             }
+             if (purchasedItems.has(4)) { // 派對背景主題
+                 document.body.style.backgroundColor = '#E0F7FA'; // 變更背景色
+             }
+        }
+
+
+        // 程式啟動
+        init();
+
+    </script>
+
 </body>
 </html>
