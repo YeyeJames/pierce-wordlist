@@ -1,735 +1,450 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pierce 專用拼字練習</title>
-    <style>
-        /* CSS 樣式 */
-        body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background-color: #f4f4f9; color: #333; }
-        #header { position: fixed; top: 0; left: 0; width: 100%; background-color: #4CAF50; color: white; padding: 10px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
-        #stats { display: flex; gap: 30px; font-size: 1.2em; }
-        #stats span { display: flex; align-items: center; }
-        .coin-icon { color: gold; font-size: 1.5em; margin-right: 5px; }
-        .rule-icon { cursor: pointer; margin-left: 10px; }
-        #content { padding-top: 70px; padding-bottom: 20px; max-width: 800px; margin: auto; }
-        .section { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        h2 { color: #4CAF50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
-
-        /* 週次選擇 */
-        #week-selection select { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; width: 100%; }
-
-        /* 練習區 */
-        #quiz-area { text-align: center; }
-        #word-display { font-size: 2em; margin-bottom: 15px; min-height: 40px; }
-        #chinese-display { font-size: 1.2em; color: #555; margin-top: 10px; min-height: 20px; }
-        #input-container { display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
-        #spelling-input { padding: 10px; font-size: 18px; border-radius: 5px; border: 2px solid #ccc; width: 60%; margin-right: 10px; text-transform: lowercase; }
-        #spelling-input:focus { border-color: #4CAF50; outline: none; }
-        button { padding: 10px 15px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; margin: 5px; }
-        .primary-btn { background-color: #008CBA; color: white; }
-        .primary-btn:hover { background-color: #007B9E; }
-        .action-btn { background-color: #f44336; color: white; }
-        .action-btn:hover { background-color: #da190b; }
-        .secondary-btn { background-color: #ff9800; color: white; }
-        .secondary-btn:hover { background-color: #e68900; }
-        .success-msg { color: green; font-weight: bold; margin-top: 10px; }
-        .error-msg { color: red; font-weight: bold; margin-top: 10px; }
-
-        /* 錄音/提示區 */
-        #recording-section { margin-top: 20px; border-top: 1px dashed #ccc; padding-top: 15px; }
-        #recording-controls button { background-color: #3f51b5; }
-        #recording-controls button:hover { background-color: #303f9f; }
-
-        /* 商店區 */
-        .shop-item { border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .item-info h4 { margin: 0 0 5px 0; color: #3f51b5; }
-        .item-info p { margin: 0; font-size: 0.9em; color: #666; }
-        .buy-btn { background-color: gold; color: #333; font-weight: bold; }
-        .buy-btn:hover { background-color: #e6c200; }
-
-        /* 模態框 (金幣規則) */
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
-        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 400px; border-radius: 10px; }
-        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
-        .close:hover, .close:focus { color: #000; text-decoration: none; cursor: pointer; }
-
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pierce 專用拼字練習 — 離線最終版 v5</title>
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#121933; --accent:#7dd3fc; --accent2:#facc15; --good:#22c55e; --bad:#ef4444; --muted:#9aa4c7; --card:#0f172a;
+    }
+    html,body{margin:0;height:100%;background:var(--bg);color:#e5edff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans",sans-serif}
+    *{box-sizing:border-box}
+    .app{display:grid;grid-template-columns:1fr 360px;gap:16px;padding:96px 18px 24px;max-width:1280px;margin:0 auto}
+    header.topbar{position:fixed;inset:0 0 auto 0;height:76px;background:rgba(17,24,39,.85);backdrop-filter:saturate(1.2) blur(8px);display:flex;align-items:center;gap:18px;padding:12px 18px;border-bottom:1px solid #263056;z-index:50}
+    .brand{font-weight:800;letter-spacing:.3px}
+    .statbar{display:flex;gap:18px;flex-wrap:wrap}
+    .chip{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--panel);border:1px solid #263056;border-radius:999px;font-weight:700}
+    .coin{color:var(--accent2)}
+    .btn{cursor:pointer;border:1px solid #2b375f;background:linear-gradient(180deg,#1b2550,#141c3c);padding:10px 14px;border-radius:12px;color:#e8edff;font-weight:800;transition:.2s;box-shadow:0 2px 0 #0b1128}
+    .btn:hover{transform:translateY(-1px)}
+    .btn:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.3)}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .card{background:var(--card);border:1px solid #243055;border-radius:16px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+    .h{font-weight:900;font-size:20px;margin:0 0 8px}
+    select, input[type=text]{background:#0a122b;border:1px solid #243055;color:#eaf0ff;border-radius:12px;padding:12px 14px;font-size:18px;outline:none}
+    input[type=text]{width:100%}
+    .answer-wrap{display:flex;gap:10px;align-items:center}
+    .answer-wrap.cool input[type=text]{border:2px solid var(--accent);box-shadow:0 0 0 4px rgba(125,211,252,.15), inset 0 0 0 1px #243055}
+    .pill{padding:6px 10px;border-radius:999px;background:#0a122b;border:1px solid #243055;color:#a8b3da;font-weight:700}
+    .feedback{min-height:36px}
+    .good{color:var(--good)} .bad{color:var(--bad)}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .store-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px dashed #33406d;border-radius:12px}
+    .store-item .price{color:var(--accent2);font-weight:800}
+    .store-item .owned{color:var(--good);font-weight:800}
+    .muted{color:var(--muted)}
+    .kbr{font-weight:800;padding:2px 8px;border-radius:8px;border:1px solid #2a3560;background:#0a122b}
+    .listbox{max-height:360px;overflow:auto;border:1px solid #22305b;border-radius:12px}
+    .listbox details{border-bottom:1px solid #22305b}
+    .listbox summary{padding:12px 14px;cursor:pointer;font-weight:800}
+    .listbox .word{display:flex;justify-content:space-between;padding:10px 14px}
+    .rules{white-space:pre-line}
+    .earned{color:var(--accent2);font-weight:900}
+    .tiny{font-size:12px}
+    canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:60}
+  </style>
 </head>
 <body>
-
-    <div id="header">
-        <div id="stats">
-            <span><span class="coin-icon">💰</span>目前金幣: <span id="current-coins">0</span></span>
-            <span>連續答對: <span id="streak-count">0</span> 題</span>
-        </div>
-        <div>
-            金幣獲取規則 <span class="rule-icon" id="rule-btn">ℹ️</span>
-            <button id="shop-btn" class="secondary-btn">🎆 商店</button>
-        </div>
+  <canvas id="fx"></canvas>
+  <header class="topbar">
+    <div class="brand">🐝 Pierce Spelling Bee</div>
+    <div class="statbar">
+      <div class="chip"><span class="coin">🪙</span> 目前金幣：<span id="coins">0</span></div>
+      <div class="chip">連續答對：<span id="streak">0</span></div>
+      <div class="chip">金幣獲取規則 <button class="btn" id="showRules">查看</button></div>
     </div>
+    <div style="margin-left:auto" class="row">
+      <label class="muted">週次：</label>
+      <select id="weekSel"></select>
+      <button id="newQ" class="btn">下一題</button>
+      <button id="replay" class="btn" title="再聽一次 (T)">再聽一次 🔊</button>
+    </div>
+  </header>
 
-    <div id="content">
-
-        <div id="week-selection" class="section">
-            <h2>週次選擇</h2>
-            <select id="week-select"></select>
+  <main class="app">
+    <section class="card" id="play">
+      <h2 class="h">🎧 聽寫練習</h2>
+      <div class="row tiny muted">提示：按 <span class="kbr">Enter</span> 送出、<span class="kbr">T</span> 再聽一次</div>
+      <div style="height:8px"></div>
+      <div class="answer-wrap" id="answerWrap">
+        <input id="answer" type="text" inputmode="latin" autocomplete="off" placeholder="請輸入拼字…" />
+        <button id="submit" class="btn">送出</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <div id="explain" class="muted"></div>
+      <div id="sentence" class="muted tiny"></div>
+      <div style="height:6px"></div>
+      <div class="tiny muted">本題已播放：<span id="playedOnce">0</span> 次</div>
+      <div style="height:12px"></div>
+      <div class="grid-2">
+        <div class="card" style="background:#0c1430">
+          <div class="h">🎙️ 自己錄提示</div>
+          <div class="row">
+            <button id="recBtn" class="btn">錄音</button>
+            <button id="playRec" class="btn" disabled>播放錄音</button>
+            <span id="recStatus" class="muted">（每個單字會各自儲存，下次也能播放）</span>
+          </div>
         </div>
-
-        <div id="quiz-area" class="section">
-            <h2>拼字練習</h2>
-            <div id="word-display">請選擇週次並點擊「下一題」開始</div>
-            <div id="chinese-display"></div>
-
-            <div id="input-container">
-                <input type="text" id="spelling-input" placeholder="請輸入單字拼法" disabled>
-                <button id="submit-btn" class="primary-btn" disabled>送出答案</button>
+        <div class="card" style="background:#0c1430">
+          <div class="h">🛒 小商店</div>
+          <div class="store-item">
+            <div>煙火特效</div>
+            <div class="row">
+              <span class="price">30🪙</span>
+              <button data-item="fireworks" class="buy btn">購買</button>
             </div>
-
-            <button id="repeat-btn" class="secondary-btn" disabled>再聽一次</button>
-            <button id="next-btn" class="primary-btn" disabled>下一題</button>
-
-            <div id="message-area"></div>
-
-            <div id="recording-section">
-                <h4>錄音/提示</h4>
-                <div id="recording-controls">
-                    <button id="record-btn" class="action-btn" disabled>🔴 錄音提示 (模擬)</button>
-                    <button id="play-record-btn" disabled>▶ 播放提示 (模擬)</button>
-                </div>
-                <div id="user-hint"></div>
+          </div>
+          <div class="store-item">
+            <div>語音包（自然語速 + 輕微回聲）</div>
+            <div class="row">
+              <span class="price">20🪙</span>
+              <button data-item="voicepack" class="buy btn">購買</button>
             </div>
-
+          </div>
+          <div class="store-item">
+            <div>很酷的輸入框樣式</div>
+            <div class="row">
+              <span class="price">15🪙</span>
+              <button data-item="coolinput" class="buy btn">購買</button>
+            </div>
+          </div>
+          <div class="store-item">
+            <div>✨ 主題顏色包</div>
+            <div class="row">
+              <span class="price">25🪙</span>
+              <button data-item="theme" class="buy btn">購買</button>
+            </div>
+          </div>
+          <div class="store-item">
+            <div>🎵 答對音效包</div>
+            <div class="row">
+              <span class="price">20🪙</span>
+              <button data-item="sound" class="buy btn">購買</button>
+            </div>
+          </div>
+          <div class="store-item">
+            <div>📜 顯示例句功能</div>
+            <div class="row">
+              <span class="price">10🪙</span>
+              <button data-item="sentence" class="buy btn">購買</button>
+            </div>
+          </div>
+          <div class="store-item">
+            <div>🧭 隨機模式切換</div>
+            <div class="row">
+              <span class="price">10🪙</span>
+              <button data-item="random" class="buy btn">購買</button>
+            </div>
+          </div>
+          <div class="tiny muted">已購買項目會永久保留在此裝置（localStorage）。</div>
         </div>
+      </div>
+    </section>
 
-        <div id="shop-area" class="section" style="display: none;">
-            <h2>🎆 商店</h2>
-            <div id="shop-list">
-                </div>
+    <aside class="card">
+      <div class="row" style="justify-content:space-between">
+        <h3 class="h">📚 單字清單</h3>
+        <button id="toggleList" class="btn">顯示/隱藏</button>
+      </div>
+      <div id="wordList" class="listbox" hidden></div>
+      <div style="height:12px"></div>
+      <div class="card" style="background:#0c1430">
+        <div class="h">📏 規則</div>
+        <div class="rules tiny muted">
+          1) 新題目自動播發音一次（此時不顯示中文）。\n2) 答對 +1 幣；達到以下連擊時額外加成：3題 +1、5題 +3、10題 +5、20題 +10。\n3) 答錯不扣分，並立即顯示中文解釋。\n4) 可錄音做提示，每個單字獨立儲存，下次也能播放。
         </div>
+      </div>
+    </aside>
+  </main>
 
+  <dialog id="rulesDlg" class="card" style="max-width:680px">
+    <h3 class="h">金幣獲取規則</h3>
+    <div class="rules">
++ 每題答對 +1。\n+ 連續答對達門檻時，當下那題額外加：\n  • 3題：+1\n  • 5題：+3\n  • 10題：+5\n  • 20題：+10
     </div>
+    <div style="height:14px"></div>
+    <button id="closeRules" class="btn">了解</button>
+  </dialog>
 
-    <div id="rules-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>金幣獲取規則</h3>
-            <ul>
-                <li>每題答對：**+1 幣**</li>
-                <li>答錯：**不扣分**</li>
-                <li>連續答對 Bonus:</li>
-                <ul>
-                    <li>連 3 題：額外 **+1 幣**</li>
-                    <li>連 5 題：額外 **+3 幣**</li>
-                    <li>連 10 題：額外 **+5 幣**</li>
-                    <li>連 20 題：額外 **+10 幣**</li>
-                </ul>
-            </ul>
-        </div>
-    </div>
+  <script>
+/** =============================
+ *  🐝 資料區 — 單字庫（Week 1~18）
+ *  結構：[{en, zh}]
+ *  ============================= */
+const WORDS = {
+  "Week 1": [
+    {en:"bank", zh:"銀行"},{en:"camp", zh:"露營"},{en:"hand", zh:"手"},{en:"paint", zh:"油漆"},{en:"plant", zh:"植物"},{en:"pond", zh:"池塘"},{en:"pump", zh:"幫浦"},{en:"stamp", zh:"郵票"},{en:"stand", zh:"站立"},{en:"stump", zh:"樹樁"},{en:"wind", zh:"風"},{en:"wink", zh:"眨眼"},{en:"hungry", zh:"飢餓的"},{en:"lapping", zh:"舔、拍打（水）"},{en:"milk", zh:"牛奶"},{en:"quiet", zh:"安靜的"},{en:"television", zh:"電視"},{en:"backyard", zh:"後院"},{en:"basement", zh:"地下室"},{en:"clean", zh:"打掃"},{en:"fly up", zh:"飛起來"},{en:"keep-away", zh:"躲避遊戲"},{en:"near", zh:"近的"},{en:"paint", zh:"油漆"},{en:"upstairs", zh:"樓上"},
+  ],
+  "Week 2": [
+    {en:"belt", zh:"皮帶"},{en:"elf", zh:"小精靈"},{en:"gift", zh:"禮物"},{en:"golf", zh:"高爾夫"},{en:"left", zh:"左邊"},{en:"lift", zh:"提起"},{en:"melt", zh:"融化"},{en:"quilt", zh:"棉被"},{en:"raft", zh:"木筏"},{en:"shelf", zh:"架子"},{en:"wilt", zh:"枯萎"},{en:"wolf", zh:"狼"},{en:"came", zh:"來了"},{en:"bait", zh:"餌"},{en:"rake", zh:"耙子"},{en:"hay", zh:"乾草"},{en:"plate", zh:"盤子"},{en:"pail", zh:"水桶"},{en:"cane", zh:"拐杖"},{en:"raise", zh:"舉起"},{en:"grape", zh:"葡萄"},{en:"say", zh:"說"},{en:"aid", zh:"幫助"},{en:"pain", zh:"疼痛"},{en:"trail", zh:"小徑"},{en:"stain", zh:"汙漬"},{en:"blaze", zh:"火焰"},{en:"almost", zh:"幾乎"},{en:"dishes", zh:"盤子"},{en:"everyone", zh:"每個人"},{en:"family", zh:"家人"},{en:"later", zh:"之後"},{en:"soup", zh:"湯"},{en:"still", zh:"仍然"},{en:"together", zh:"一起"},{en:"window", zh:"窗戶"},{en:"children", zh:"孩子們"},{en:"collar", zh:"領子"},{en:"heel", zh:"腳跟"},{en:"hurt", zh:"受傷"},{en:"in front of", zh:"在…前面"},{en:"lean", zh:"傾斜"},{en:"pet store", zh:"寵物店"},{en:"snort", zh:"噴鼻息"},
+  ],
+  "Week 3": [
+    {en:"scrape", zh:"刮"},{en:"scratch", zh:"抓"},{en:"screen", zh:"螢幕"},{en:"scrub", zh:"用力擦"},{en:"splash", zh:"濺起"},{en:"split", zh:"分開"},{en:"sprain", zh:"扭傷"},{en:"spray", zh:"噴灑"},{en:"spring", zh:"春天 / 彈簧"},{en:"strap", zh:"皮帶"},{en:"stripes", zh:"條紋"},{en:"strong", zh:"強壯的"},{en:"deep", zh:"深的"},{en:"meal", zh:"一餐"},{en:"sheep", zh:"羊"},{en:"each", zh:"每一個"},{en:"wheel", zh:"輪子"},{en:"treat", zh:"招待"},{en:"bean", zh:"豆子"},{en:"seen", zh:"看見（過去分詞）"},{en:"team", zh:"團隊"},{en:"dream", zh:"夢"},{en:"mean", zh:"意思是"},{en:"leave", zh:"離開"},{en:"cream", zh:"奶油"},{en:"sleep", zh:"睡覺"},{en:"sneeze", zh:"打噴嚏"},{en:"copies", zh:"副本"},{en:"enough", zh:"足夠"},{en:"library", zh:"圖書館"},{en:"number", zh:"數字"},{en:"prizes", zh:"獎品"},{en:"ribbon", zh:"緞帶"},{en:"ring", zh:"戒指"},{en:"rope", zh:"繩子"},{en:"sign", zh:"標誌"},{en:"tonight", zh:"今晚"},{en:"happen", zh:"發生"},{en:"miss", zh:"想念"},{en:"nice", zh:"好的"},{en:"steps", zh:"階梯"},{en:"terrible", zh:"可怕的"},
+  ],
+  "Week 4": [
+    {en:"knee", zh:"膝蓋"},{en:"kneel", zh:"跪下"},{en:"knife", zh:"刀"},{en:"knit", zh:"編織"},{en:"knob", zh:"圓形把手"},{en:"knock", zh:"敲"},{en:"knot", zh:"結"},{en:"wrap", zh:"包起來"},{en:"wreath", zh:"花圈"},{en:"wrench", zh:"扳手"},{en:"wrist", zh:"手腕"},{en:"write", zh:"寫"},{en:"wrong", zh:"錯的"},{en:"shy", zh:"害羞的"},{en:"right", zh:"正確的 / 右邊"},{en:"wide", zh:"寬的"},{en:"light", zh:"光 / 輕的"},{en:"pine", zh:"松樹"},{en:"fight", zh:"打架"},{en:"fly", zh:"飛"},{en:"night", zh:"夜晚"},{en:"dry", zh:"乾的"},{en:"sight", zh:"視線"},{en:"might", zh:"可能"},{en:"tight", zh:"緊的"},{en:"stripe", zh:"條紋"},{en:"sly", zh:"狡猾的"},{en:"cry", zh:"哭"},{en:"basket", zh:"籃子"},{en:"bend down", zh:"彎下"},{en:"kind", zh:"親切的 / 種類"},{en:"wave", zh:"揮手 / 波浪"},{en:"enter", zh:"進入"},{en:"never", zh:"從不"},{en:"picture", zh:"圖片"},{en:"proud", zh:"驕傲的"},{en:"shiny", zh:"閃亮的"},{en:"spray", zh:"噴灑"},
+  ],
+  "Week 5": [
+    {en:"brick", zh:"磚"},{en:"check", zh:"檢查"},{en:"chick", zh:"小雞"},{en:"clock", zh:"時鐘"},{en:"duck", zh:"鴨子"},{en:"lock", zh:"鎖"},{en:"pocket", zh:"口袋"},{en:"rack", zh:"架子"},{en:"rock", zh:"岩石"},{en:"rocket", zh:"火箭"},{en:"snack", zh:"點心"},{en:"thick", zh:"厚的"},{en:"track", zh:"軌道"},{en:"poke", zh:"戳"},{en:"boat", zh:"船"},{en:"row", zh:"划船"},{en:"goat", zh:"山羊"},{en:"snow", zh:"雪"},{en:"toad", zh:"蟾蜍"},{en:"soap", zh:"肥皂"},{en:"blow", zh:"吹"},{en:"coat", zh:"外套"},{en:"tow", zh:"拖拉"},{en:"coach", zh:"教練"},{en:"float", zh:"漂浮"},{en:"toast", zh:"吐司"},{en:"slow", zh:"慢的"},{en:"globe", zh:"地球"},{en:"at once", zh:"立刻"},{en:"dog toys", zh:"狗玩具"},{en:"guess", zh:"猜"},{en:"inside", zh:"裡面"},{en:"judge", zh:"評判"},{en:"place", zh:"地方"},
+  ],
+  "Week 6": [
+    {en:"bright", zh:"明亮的"},{en:"caught", zh:"抓到"},{en:"eight", zh:"八"},{en:"flight", zh:"飛行"},{en:"high", zh:"高的"},{en:"knight", zh:"騎士"},{en:"light", zh:"光"},{en:"night", zh:"夜晚"},{en:"right", zh:"正確的"},{en:"sign", zh:"標誌"},{en:"sight", zh:"視力"},{en:"straight", zh:"直的"},{en:"tight", zh:"緊的"},{en:"tune", zh:"曲子"},{en:"moon", zh:"月亮"},{en:"pool", zh:"游泳池"},{en:"zoo", zh:"動物園"},{en:"rude", zh:"粗魯的"},{en:"soon", zh:"很快"},{en:"boot", zh:"長靴"},{en:"food", zh:"食物"},{en:"tube", zh:"管子"},{en:"room", zh:"房間"},{en:"moose", zh:"麋鹿"},{en:"goose", zh:"鵝"},{en:"zoom", zh:"嗖地飛"},{en:"balloon", zh:"氣球"},{en:"shoot", zh:"射擊"},{en:"a can of", zh:"一罐"},{en:"enter", zh:"進入"},{en:"first", zh:"第一"},{en:"glitter", zh:"閃光"},{en:"gold", zh:"金子"},{en:"prizes", zh:"獎品"},{en:"second", zh:"第二"},{en:"sign up", zh:"報名"},{en:"surely", zh:"當然"},{en:"third", zh:"第三"},{en:"look at", zh:"看著"},{en:"no cost", zh:"免費"},{en:"nod", zh:"點頭"},{en:"paste", zh:"黏貼"},{en:"permission", zh:"許可"},
+  ],
+  "Week 7": [
+    {en:"basement", zh:"地下室"},{en:"bright-eyed", zh:"眼神明亮的"},{en:"lean", zh:"傾斜"},{en:"past", zh:"過去"},{en:"wrong", zh:"錯的"},{en:"remember", zh:"記得"},{en:"clap", zh:"拍手"},{en:"crowd", zh:"人群"},{en:"hug", zh:"擁抱"},{en:"nervous", zh:"緊張的"},{en:"people", zh:"人們"},{en:"ring", zh:"戒指 / 鈴聲"},
+  ],
+  "Week 8": [
+    {en:"different", zh:"不同的"},{en:"hold up", zh:"舉起"},{en:"lay down", zh:"躺下"},{en:"other", zh:"其他的"},{en:"racehorse", zh:"賽馬"},{en:"win", zh:"贏"},{en:"winner", zh:"勝利者"},
+  ],
+  "Week 9": [
+    {en:"what", zh:"什麼"},{en:"clash", zh:"衝突"},{en:"shock", zh:"震驚"},{en:"while", zh:"當…時"},{en:"shame", zh:"可惜"},{en:"flash", zh:"閃光"},{en:"where", zh:"哪裡"},{en:"shine", zh:"發亮"},{en:"why", zh:"為什麼"},{en:"shore", zh:"海岸"},{en:"shall", zh:"將要"},{en:"share", zh:"分享"},{en:"shadow", zh:"影子"},{en:"whisper", zh:"低語"},{en:"whiskers", zh:"鬍鬚"},{en:"different", zh:"不同的"},{en:"hold up", zh:"舉起"},{en:"lay down", zh:"躺下"},{en:"other", zh:"其他的"},{en:"racehorse", zh:"賽馬"},{en:"win", zh:"贏"},{en:"winner", zh:"優勝者"},{en:"braid", zh:"辮子"},{en:"chain", zh:"鍊條"},{en:"hay", zh:"乾草"},{en:"mail", zh:"郵件"},{en:"pail", zh:"水桶"},{en:"paint", zh:"油漆"},{en:"pay", zh:"付錢"},{en:"rain", zh:"雨"},{en:"sail", zh:"帆 / 航行"},{en:"stain", zh:"汙漬"},{en:"train", zh:"火車"},{en:"tray", zh:"托盤"},{en:"beads", zh:"珠子"},{en:"bean", zh:"豆子"},{en:"beef", zh:"牛肉"},{en:"bread", zh:"麵包"},{en:"head", zh:"頭"},{en:"heel", zh:"腳跟"},{en:"leaf", zh:"葉子"},{en:"screen", zh:"螢幕"},{en:"seat", zh:"座位"},{en:"steam", zh:"蒸氣"},{en:"thread", zh:"線"},{en:"tree", zh:"樹"},{en:"climb", zh:"爬"},{en:"myself", zh:"我自己"},{en:"practice", zh:"練習"},{en:"track", zh:"軌道"},{en:"uncle", zh:"叔叔"},{en:"whiskers", zh:"鬍鬚"},
+  ],
+  "Week 10": [
+    {en:"braid", zh:"辮子"},{en:"chain", zh:"鍊條"},{en:"hay", zh:"乾草"},{en:"nail", zh:"指甲 / 釘子"},{en:"pail", zh:"水桶"},{en:"paint", zh:"油漆"},{en:"pay", zh:"付錢"},{en:"rain", zh:"雨"},{en:"sail", zh:"航行"},{en:"stain", zh:"汙點"},{en:"beads", zh:"珠子"},{en:"bean", zh:"豆子"},{en:"beef", zh:"牛肉"},{en:"bead", zh:"珠子"},{en:"head", zh:"頭"},{en:"heel", zh:"腳跟"},{en:"leaf", zh:"葉子"},{en:"screen", zh:"螢幕"},{en:"seat", zh:"座位"},{en:"steam", zh:"蒸氣"},{en:"thread", zh:"線"},{en:"tree", zh:"樹"},{en:"climb", zh:"爬"},{en:"myself", zh:"我自己"},{en:"practice", zh:"練習"},{en:"track", zh:"軌道"},{en:"uncle", zh:"叔叔"},{en:"whiskers", zh:"鬍鬚"},{en:"wrote", zh:"寫了"},{en:"clover", zh:"酢漿草"},{en:"danger", zh:"危險"},{en:"field", zh:"田野"},{en:"noise", zh:"噪音"},{en:"pass", zh:"經過"},{en:"rest", zh:"休息"},{en:"rumble", zh:"隆隆聲"},{en:"sky", zh:"天空"},{en:"thunder", zh:"雷"},
+  ],
+  "Week 11": [
+    {en:"blow", zh:"吹"},{en:"bowl", zh:"碗"},{en:"crow", zh:"烏鴉"},{en:"goat", zh:"山羊"},{en:"pillow", zh:"枕頭"},{en:"road", zh:"道路"},{en:"snow", zh:"雪"},{en:"soap", zh:"肥皂"},{en:"throw", zh:"丟"},{en:"toad", zh:"蟾蜍"},{en:"toast", zh:"吐司"},{en:"window", zh:"窗戶"},{en:"bath", zh:"洗澡"},{en:"peach", zh:"桃子"},{en:"tooth", zh:"牙齒"},{en:"thin", zh:"瘦的"},{en:"choke", zh:"噎到"},{en:"much", zh:"很多"},{en:"with", zh:"和"},{en:"chick", zh:"小雞"},{en:"teach", zh:"教"},{en:"thank", zh:"感謝"},{en:"child", zh:"小孩"},{en:"chore", zh:"家事"},{en:"reach", zh:"到達"},{en:"thick", zh:"厚的"},{en:"think", zh:"思考"},{en:"carrot", zh:"胡蘿蔔"},{en:"cool", zh:"涼的"},{en:"gloves", zh:"手套"},{en:"haircut", zh:"理髮"},{en:"patch", zh:"補丁"},{en:"pond", zh:"池塘"},{en:"spring", zh:"春天"},{en:"voice", zh:"聲音"},{en:"wool", zh:"羊毛"},{en:"acorn", zh:"橡子"},{en:"angry", zh:"生氣的"},{en:"as fast as", zh:"盡可能快"},{en:"bless", zh:"祝福"},{en:"chattering", zh:"喋喋不休"},{en:"dig", zh:"挖"},{en:"hill", zh:"小山"},{en:"oak", zh:"橡樹"},{en:"squirrel", zh:"松鼠"},{en:"thief", zh:"小偷"},{en:"tiny", zh:"很小的"},
+  ],
+  "Week 12": [
+    {en:"boot", zh:"長靴"},{en:"cook", zh:"煮"},{en:"hood", zh:"帽兜"},{en:"hook", zh:"鉤子"},{en:"hoop", zh:"圈"},{en:"moose", zh:"麋鹿"},{en:"pool", zh:"游泳池"},{en:"school", zh:"學校"},{en:"shook", zh:"搖動（過去式）"},{en:"spoon", zh:"湯匙"},{en:"stood", zh:"站立（過去式）"},{en:"stool", zh:"凳子"},{en:"cause", zh:"原因"},{en:"claw", zh:"爪"},{en:"crawl", zh:"爬行"},{en:"draw", zh:"畫"},{en:"faucet", zh:"水龍頭"},{en:"fawn", zh:"小鹿"},{en:"laundry", zh:"洗衣"},{en:"paw", zh:"爪子"},{en:"sauce", zh:"醬汁"},{en:"shawl", zh:"披巾"},{en:"straw", zh:"吸管 / 稻草"},{en:"yawn", zh:"打哈欠"},{en:"behind", zh:"在後面"},{en:"berry", zh:"漿果"},{en:"branches", zh:"樹枝"},{en:"bushy tail", zh:"毛茸茸的尾巴"},{en:"dance", zh:"跳舞"},{en:"flag", zh:"旗子"},{en:"insect", zh:"昆蟲"},{en:"quick", zh:"快的"},{en:"skunk", zh:"臭鼬"},{en:"suddenly", zh:"突然地"},
+  ],
+  "Week 13": [
+    {en:"blew", zh:"吹了"},{en:"chew", zh:"咀嚼"},{en:"dew", zh:"露水"},{en:"few", zh:"少數"},{en:"flew", zh:"飛了"},{en:"grew", zh:"成長"},{en:"jewelry", zh:"珠寶"},{en:"mew", zh:"貓叫"},{en:"new", zh:"新的"},{en:"screw", zh:"螺絲"},{en:"stew", zh:"燉菜"},{en:"threw", zh:"丟了"},{en:"art", zh:"藝術"},{en:"yard", zh:"院子"},{en:"barn", zh:"穀倉"},{en:"park", zh:"公園"},{en:"hard", zh:"困難的"},{en:"cart", zh:"手推車"},{en:"dark", zh:"黑暗"},{en:"farm", zh:"農場"},{en:"shark", zh:"鯊魚"},{en:"sharp", zh:"銳利的"},{en:"harm", zh:"傷害"},{en:"alarm", zh:"鬧鐘"},{en:"arms", zh:"手臂"},{en:"march", zh:"三月 / 行進"},{en:"smart", zh:"聰明的"},{en:"buzzing", zh:"嗡嗡聲"},{en:"careful", zh:"小心的"},{en:"fur", zh:"毛"},{en:"hit", zh:"打"},{en:"hole", zh:"洞"},{en:"honey", zh:"蜂蜜"},{en:"lick", zh:"舔"},{en:"path", zh:"小路"},{en:"sting", zh:"螫"},{en:"stuck", zh:"卡住的"},{en:"against", zh:"反對"},{en:"hardly", zh:"幾乎不"},{en:"meadow", zh:"草地"},{en:"middle", zh:"中間"},{en:"pit-pat", zh:"噠噠聲"},{en:"space", zh:"空間"},{en:"toss", zh:"丟"},{en:"touch", zh:"觸碰"},{en:"whistle", zh:"口哨"},
+  ],
+  "Week 15": [
+    {en:"baby", zh:"嬰兒"},{en:"bunny", zh:"小兔子"},{en:"city", zh:"城市"},{en:"cry", zh:"哭"},{en:"dry", zh:"乾的"},{en:"fly", zh:"飛"},{en:"fry", zh:"炸"},{en:"happy", zh:"快樂的"},{en:"party", zh:"派對"},{en:"pony", zh:"小馬"},{en:"silly", zh:"傻的"},{en:"sky", zh:"天空"},{en:"story", zh:"故事"},{en:"chain", zh:"鏈子"},{en:"chop", zh:"切"},{en:"shed", zh:"棚子"},{en:"shelf", zh:"架子"},{en:"thick", zh:"厚的"},{en:"thin", zh:"瘦的"},{en:"think", zh:"思考"},{en:"thread", zh:"線"},{en:"three", zh:"三"},{en:"throat", zh:"喉嚨"},{en:"whale", zh:"鯨魚"},{en:"wheel", zh:"輪子"},{en:"shines", zh:"發光"},{en:"through", zh:"穿過"},{en:"bouncing", zh:"彈跳的"},{en:"spider", zh:"蜘蛛"},{en:"webs", zh:"網"},{en:"woods", zh:"樹林"},{en:"glass", zh:"玻璃"},{en:"tied together", zh:"綁在一起"},{en:"drop", zh:"掉下"},{en:"straight", zh:"直的"},{en:"friendly", zh:"友善的"},{en:"bless", zh:"祝福"},{en:"blink", zh:"眨眼"},{en:"crawl", zh:"爬"},{en:"flat", zh:"平的"},{en:"follow", zh:"跟隨"},{en:"join", zh:"加入"},{en:"rock", zh:"岩石"},{en:"star", zh:"星星"},{en:"swish", zh:"唰地一聲"},
+  ],
+  "Week 16": [
+    {en:"bath", zh:"洗澡"},{en:"bench", zh:"長凳"},{en:"branch", zh:"樹枝"},{en:"brush", zh:"刷子"},{en:"dish", zh:"盤子"},{en:"ditch", zh:"溝渠"},{en:"path", zh:"小徑"},{en:"ring", zh:"戒指"},{en:"swing", zh:"盪鞦韆"},{en:"switch", zh:"開關"},{en:"teeth", zh:"牙齒"},{en:"watch", zh:"手錶"},{en:"bird", zh:"鳥"},{en:"more", zh:"更多"},{en:"shirt", zh:"襯衫"},{en:"horse", zh:"馬"},{en:"first", zh:"第一"},{en:"for", zh:"為了"},{en:"girl", zh:"女孩"},{en:"horn", zh:"角"},{en:"dirt", zh:"泥土"},{en:"short", zh:"短的"},{en:"store", zh:"商店"},{en:"morning", zh:"早晨"},{en:"dinosaur", zh:"恐龍"},{en:"third", zh:"第三"},{en:"whirl", zh:"旋轉"},{en:"appear", zh:"出現"},{en:"decide", zh:"決定"},{en:"furry", zh:"毛茸茸的"},{en:"sister", zh:"姐妹"},{en:"strange", zh:"奇怪的"},{en:"tease", zh:"取笑"},
+  ],
+  "Week 17": [
+    {en:"barn", zh:"穀倉"},{en:"card", zh:"卡片"},{en:"dart", zh:"飛鏢"},{en:"fern", zh:"蕨類"},{en:"harp", zh:"豎琴"},{en:"ladder", zh:"梯子"},{en:"letter", zh:"信"},{en:"number", zh:"數字"},{en:"paper", zh:"紙"},{en:"shark", zh:"鯊魚"},{en:"slipper", zh:"拖鞋"},{en:"water", zh:"水"},{en:"yard", zh:"院子"},{en:"flutter", zh:"拍動"},{en:"flyer", zh:"傳單"},{en:"minute", zh:"分鐘"},{en:"nearby", zh:"附近"},{en:"reach", zh:"到達"},{en:"seem", zh:"似乎"},{en:"throat", zh:"喉嚨"},{en:"hummingbird", zh:"蜂鳥"},{en:"afraid", zh:"害怕"},{en:"exclaimed", zh:"驚呼"},{en:"frightened", zh:"害怕的"},{en:"lift", zh:"抬起"},{en:"shut", zh:"關上"},{en:"stretch", zh:"伸展"},{en:"wide", zh:"寬的"},
+  ],
+  "Week 18": [
+    {en:"cork", zh:"軟木塞"},{en:"corn", zh:"玉米"},{en:"dirt", zh:"泥土"},{en:"fork", zh:"叉子"},{en:"horn", zh:"角"},{en:"shirt", zh:"襯衫"},{en:"short", zh:"短的"},{en:"skirt", zh:"裙子"},{en:"squirt", zh:"噴出"},{en:"stir", zh:"攪拌"},{en:"storm", zh:"暴風雨"},{en:"third", zh:"第三"},{en:"thorn", zh:"荊棘"},{en:"burn", zh:"燒"},{en:"curb", zh:"路邊"},{en:"curl", zh:"捲曲"},{en:"fur", zh:"毛"},{en:"hurt", zh:"受傷"},{en:"turn", zh:"轉彎"},{en:"does", zh:"做（第三人稱）"},{en:"were", zh:"是（過去式）"},{en:"every", zh:"每個"},{en:"very", zh:"非常"},{en:"give", zh:"給"},{en:"live", zh:"生活"},{en:"thing", zh:"東西"},{en:"your", zh:"你的"},{en:"many", zh:"許多"},{en:"who", zh:"誰"},{en:"any", zh:"任何"},{en:"away", zh:"離開"},{en:"goes", zh:"去（第三人稱）"},{en:"find", zh:"找到"},{en:"kind", zh:"種類 / 好的"},{en:"ago", zh:"以前"},{en:"another", zh:"另一個"},{en:"corner", zh:"角落"},{en:"everywhere", zh:"到處"},{en:"fold", zh:"摺"},{en:"important", zh:"重要的"},{en:"mouse", zh:"老鼠"},{en:"neck", zh:"脖子"},{en:"owl", zh:"貓頭鷹"},{en:"sharp", zh:"銳利的"},{en:"size", zh:"尺寸"},{en:"supper", zh:"晚餐"},{en:"argue", zh:"爭吵"},{en:"bright", zh:"明亮的"},{en:"button", zh:"鈕扣"},{en:"chuckle", zh:"輕笑"},{en:"ladybug", zh:"瓢蟲"},{en:"prettiest", zh:"最漂亮的"},{en:"shout", zh:"叫喊"},{en:"spots", zh:"斑點"},{en:"whole", zh:"整個的"},
+  ],
+};
 
-    <script>
-        // JavaScript 邏輯
+/** =============================
+ *  ⚙️ 狀態與持久化
+ *  ============================= */
+const $ = s=>document.querySelector(s);
+const coinsEl = $("#coins"), streakEl = $("#streak"), playedEl = $("#playedOnce");
+const feedback = $("#feedback"), explain = $("#explain"), sentenceEl=$("#sentence");
+const answer = $("#answer"), submitBtn = $("#submit"), replayBtn=$("#replay"), newQBtn=$("#newQ");
+const weekSel = $("#weekSel"), wordList = $("#wordList"), toggleListBtn=$("#toggleList");
+const answerWrap = $("#answerWrap");
+let state = {
+  coins: 0,
+  streak: 0,
+  purchased: { fireworks:false, voicepack:false, coolinput:false, theme:false, sound:false, sentence:false, random:false },
+  currentWeek: Object.keys(WORDS)[0],
+  qIndex: -1,
+  order: [],
+  played: 0,
+  currentWord: null,
+};
+// 讀取 localStorage
+try{
+  const raw = localStorage.getItem("pierce_spellingbee_v5");
+  if(raw){ state = {...state, ...JSON.parse(raw)}; }
+}catch(e){ console.warn(e); }
+updateHeader();
 
-        const wordList = {
-            'Week 1': [
-                ['bank', '銀行'], ['camp', '露營'], ['hand', '手'], ['paint', '油漆'], ['plant', '植物'], 
-                ['pond', '池塘'], ['pump', '幫浦'], ['stamp', '郵票'], ['stand', '站立'], ['stump', '樹樁'], 
-                ['wind', '風'], ['wink', '眨眼'], ['hungry', '飢餓的'], ['lapping', '舔、拍打（水）'], ['milk', '牛奶'], 
-                ['quiet', '安靜的'], ['television', '電視'], ['backyard', '後院'], ['basement', '地下室'], 
-                ['clean', '打掃'], ['fly up', '飛起來'], ['keep-away', '躲避遊戲'], ['near', '近的'], ['upstairs', '樓上']
-            ],
-            'Week 2': [
-                ['belt', '皮帶'], ['elf', '小精靈'], ['gift', '禮物'], ['golf', '高爾夫'], ['left', '左邊'], 
-                ['lift', '提起'], ['melt', '融化'], ['quilt', '棉被'], ['raft', '木筏'], ['shelf', '架子'], 
-                ['wilt', '枯萎'], ['wolf', '狼'], ['came', '來了'], ['bait', '餌'], ['rake', '耙子'], 
-                ['hay', '乾草'], ['plate', '盤子'], ['pail', '水桶'], ['cane', '拐杖'], ['raise', '舉起'], 
-                ['grape', '葡萄'], ['say', '說'], ['aid', '幫助'], ['pain', '疼痛'], ['trail', '小徑'], 
-                ['stain', '汙漬'], ['blaze', '火焰'], ['almost', '幾乎'], ['dishes', '盤子'], ['everyone', '每個人'], 
-                ['family', '家人'], ['later', '之後'], ['soup', '湯'], ['still', '仍然'], ['together', '一起'], 
-                ['window', '窗戶'], ['children', '孩子們'], ['collar', '領子'], ['heel', '腳跟'], ['hurt', '受傷'], 
-                ['in front of', '在…前面'], ['lean', '傾斜'], ['pet store', '寵物店'], ['snort', '噴鼻息']
-            ],
-            'Week 3': [
-                ['scrape', '刮'], ['scratch', '抓'], ['screen', '螢幕'], ['scrub', '用力擦'], ['splash', '濺起'], 
-                ['split', '分開'], ['sprain', '扭傷'], ['spray', '噴灑'], ['spring', '春天 / 彈簧'], ['strap', '皮帶'], 
-                ['stripes', '條紋'], ['strong', '強壯的'], ['deep', '深的'], ['meal', '一餐'], ['sheep', '羊'], 
-                ['each', '每一個'], ['wheel', '輪子'], ['treat', '招待'], ['bean', '豆子'], ['seen', '看見（過去分詞）'], 
-                ['team', '團隊'], ['dream', '夢'], ['mean', '意思是'], ['leave', '離開'], ['cream', '奶油'], 
-                ['sleep', '睡覺'], ['sneeze', '打噴嚏'], ['copies', '副本'], ['enough', '足夠'], ['library', '圖書館'], 
-                ['number', '數字'], ['prizes', '獎品'], ['ribbon', '緞帶'], ['ring', '戒指'], ['rope', '繩子'], 
-                ['sign', '標誌'], ['tonight', '今晚'], ['happen', '發生'], ['miss', '想念'], ['nice', '好的'], 
-                ['steps', '階梯'], ['terrible', '可怕的']
-            ],
-            'Week 4': [
-                ['knee', '膝蓋'], ['kneel', '跪下'], ['knife', '刀'], ['knit', '編織'], ['knob', '圓形把手'], 
-                ['knock', '敲'], ['knot', '結'], ['wrap', '包起來'], ['wreath', '花圈'], ['wrench', '扳手'], 
-                ['wrist', '手腕'], ['write', '寫'], ['wrong', '錯的'], ['shy', '害羞的'], ['right', '正確的 / 右邊'], 
-                ['wide', '寬的'], ['light', '光 / 輕的'], ['pine', '松樹'], ['fight', '打架'], ['fly', '飛'], 
-                ['night', '夜晚'], ['dry', '乾的'], ['sight', '視線'], ['might', '可能'], ['tight', '緊的'], 
-                ['stripe', '條紋'], ['sly', '狡猾的'], ['cry', '哭'], ['basket', '籃子'], ['bend down', '彎下'], 
-                ['kind', '親切的 / 種類'], ['wave', '揮手 / 波浪'], ['enter', '進入'], ['never', '從不'], 
-                ['picture', '圖片'], ['proud', '驕傲的'], ['shiny', '閃亮的'], ['spray', '噴灑']
-            ],
-            'Week 5': [
-                ['brick', '磚'], ['check', '檢查'], ['chick', '小雞'], ['clock', '時鐘'], ['duck', '鴨子'], 
-                ['lock', '鎖'], ['pocket', '口袋'], ['rack', '架子'], ['rock', '岩石'], ['rocket', '火箭'], 
-                ['snack', '點心'], ['thick', '厚'], ['track', '軌道'], ['poke', '戳'], ['boat', '船'], 
-                ['row', '划船'], ['goat', '山羊'], ['snow', '雪'], ['toad', '蟾蜍'], ['soap', '肥皂'], 
-                ['blow', '吹'], ['coat', '外套'], ['tow', '拖拉'], ['coach', '教練'], ['float', '漂浮'], 
-                ['toast', '吐司'], ['slow', '慢的'], ['globe', '地球'], ['at once', '立刻'], ['dog toys', '狗玩具'], 
-                ['guess', '猜'], ['inside', '裡面'], ['judge', '評判'], ['place', '地方']
-            ],
-            'Week 6': [
-                ['bright', '明亮的'], ['caught', '抓到'], ['eight', '八'], ['flight', '飛行'], ['high', '高的'], 
-                ['knight', '騎士'], ['light', '光'], ['night', '夜晚'], ['right', '正確的'], ['sign', '標誌'], 
-                ['sight', '視力'], ['straight', '直的'], ['tight', '緊的'], ['tune', '曲子'], ['moon', '月亮'], 
-                ['pool', '游泳池'], ['zoo', '動物園'], ['rude', '粗魯的'], ['soon', '很快'], ['boot', '長靴'], 
-                ['food', '食物'], ['tube', '管子'], ['room', '房間'], ['moose', '麋鹿'], ['goose', '鵝'], 
-                ['zoom', '嗖地飛'], ['balloon', '氣球'], ['shoot', '射擊'], ['a can of', '一罐'], ['enter', '進入'], 
-                ['first', '第一'], ['glitter', '閃光'], ['gold', '金子'], ['prizes', '獎品'], ['second', '第二'], 
-                ['sign up', '報名'], ['surely', '當然'], ['third', '第三'], ['look at', '看著'], ['no cost', '免費'], 
-                ['nod', '點頭'], ['paste', '黏貼'], ['permission', '許可']
-            ],
-            'Week 7': [
-                ['basement', '地下室'], ['bright-eyed', '眼神明亮的'], ['lean', '傾斜'], ['past', '過去'], 
-                ['wrong', '錯的'], ['remember', '記得'], ['clap', '拍手'], ['crowd', '人群'], ['hug', '擁抱'], 
-                ['nervous', '緊張的'], ['people', '人們'], ['ring', '戒指 / 鈴聲']
-            ],
-            'Week 8': [
-                ['different', '不同的'], ['hold up', '舉起'], ['lay down', '躺下'], ['other', '其他的'], 
-                ['racehorse', '賽馬'], ['win', '贏'], ['winner', '勝利者']
-            ],
-            'Week 9': [
-                ['what', '什麼'], ['clash', '衝突'], ['shock', '震驚'], ['while', '當…時'], ['shame', '可惜'], 
-                ['flash', '閃光'], ['where', '哪裡'], ['shine', '發亮'], ['why', '為什麼'], ['shore', '海岸'], 
-                ['shall', '將要'], ['share', '分享'], ['shadow', '影子'], ['whisper', '低語'], ['whiskers', '鬍鬚'], 
-                ['different', '不同的'], ['hold up', '舉起'], ['lay down', '躺下'], ['other', '其他的'], 
-                ['racehorse', '賽馬'], ['win', '贏'], ['winner', '優勝者'], ['braid', '辮子'], ['chain', '鍊條'], 
-                ['hay', '乾草'], ['mail', '郵件'], ['pail', '水桶'], ['paint', '油漆'], ['pay', '付錢'], 
-                ['rain', '雨'], ['sail', '帆 / 航行'], ['stain', '汙漬'], ['train', '火車'], ['tray', '托盤'], 
-                ['beads', '珠子'], ['bean', '豆子'], ['beef', '牛肉'], ['bread', '麵包'], ['head', '頭'], 
-                ['heel', '腳跟'], ['leaf', '葉子'], ['screen', '螢幕'], ['seat', '座位'], ['steam', '蒸氣'], 
-                ['thread', '線'], ['tree', '樹'], ['climb', '爬'], ['myself', '我自己'], ['practice', '練習'], 
-                ['track', '軌道'], ['uncle', '叔叔'], ['whiskers', '鬍鬚']
-            ],
-            'Week 10': [
-                ['braid', '辮子'], ['chain', '鍊條'], ['hay', '乾草'], ['nail', '指甲 / 釘子'], ['pail', '水桶'], 
-                ['paint', '油漆'], ['pay', '付錢'], ['rain', '雨'], ['sail', '航行'], ['stain', '汙點'], 
-                ['beads', '珠子'], ['bean', '豆子'], ['beef', '牛肉'], ['bead', '珠子'], ['head', '頭'], 
-                ['heel', '腳跟'], ['leaf', '葉子'], ['screen', '螢幕'], ['seat', '座位'], ['steam', '蒸氣'], 
-                ['thread', '線'], ['tree', '樹'], ['climb', '爬'], ['myself', '我自己'], ['practice', '練習'], 
-                ['track', '軌道'], ['uncle', '叔叔'], ['whiskers', '鬍鬚'], ['wrote', '寫了'], ['clover', '酢漿草'], 
-                ['danger', '危險'], ['field', '田野'], ['noise', '噪音'], ['pass', '經過'], ['rest', '休息'], 
-                ['rumble', '隆隆聲'], ['sky', '天空'], ['thunder', '雷']
-            ],
-            'Week 11': [
-                ['blow', '吹'], ['bowl', '碗'], ['crow', '烏鴉'], ['goat', '山羊'], ['pillow', '枕頭'], 
-                ['road', '道路'], ['snow', '雪'], ['soap', '肥皂'], ['throw', '丟'], ['toad', '蟾蜍'], 
-                ['toast', '吐司'], ['window', '窗戶'], ['bath', '洗澡'], ['peach', '桃子'], ['tooth', '牙齒'], 
-                ['thin', '瘦的'], ['choke', '噎到'], ['much', '很多'], ['with', '和'], ['chick', '小雞'], 
-                ['teach', '教'], ['thank', '感謝'], ['child', '小孩'], ['chore', '家事'], ['reach', '到達'], 
-                ['thick', '厚'], ['think', '思考'], ['carrot', '胡蘿蔔'], ['cool', '涼的'], ['gloves', '手套'], 
-                ['haircut', '理髮'], ['patch', '補丁'], ['pond', '池塘'], ['spring', '春天'], ['voice', '聲音'], 
-                ['wool', '羊毛'], ['acorn', '橡子'], ['angry', '生氣的'], ['as fast as', '盡可能快'], ['bless', '祝福'], 
-                ['chattering', '喋喋不休'], ['dig', '挖'], ['hill', '小山'], ['oak', '橡樹'], ['squirrel', '松鼠'], 
-                ['thief', '小偷'], ['tiny', '很小的']
-            ],
-            'Week 12': [
-                ['boot', '長靴'], ['cook', '煮'], ['hood', '帽兜'], ['hook', '鉤子'], ['hoop', '圈'], 
-                ['moose', '麋鹿'], ['pool', '游泳池'], ['school', '學校'], ['shook', '搖動（過去式）'], 
-                ['spoon', '湯匙'], ['stood', '站立（過去式）'], ['stool', '凳子'], ['cause', '原因'], 
-                ['claw', '爪'], ['crawl', '爬行'], ['draw', '畫'], ['faucet', '水龍頭'], ['fawn', '小鹿'], 
-                ['laundry', '洗衣'], ['paw', '爪子'], ['sauce', '醬汁'], ['shawl', '披巾'], 
-                ['straw', '吸管 / 稻草'], ['yawn', '打哈欠'], ['behind', '在後面'], ['berry', '漿果'], 
-                ['branches', '樹枝'], ['bushy tail', '毛茸茸的尾巴'], ['dance', '跳舞'], ['flag', '旗子'], 
-                ['insect', '昆蟲'], ['quick', '快的'], ['skunk', '臭鼬'], ['suddenly', '突然地']
-            ],
-            'Week 13': [
-                ['blew', '吹了'], ['chew', '咀嚼'], ['dew', '露水'], ['few', '少數'], ['flew', '飛了'], 
-                ['grew', '成長'], ['jewelry', '珠寶'], ['mew', '貓叫'], ['new', '新的'], ['screw', '螺絲'], 
-                ['stew', '燉菜'], ['threw', '丟了'], ['art', '藝術'], ['yard', '院子'], ['barn', '穀倉'], 
-                ['park', '公園'], ['hard', '困難的'], ['cart', '手推車'], ['dark', '黑暗'], ['farm', '農場'], 
-                ['shark', '鯊魚'], ['sharp', '銳利的'], ['harm', '傷害'], ['alarm', '鬧鐘'], ['arms', '手臂'], 
-                ['march', '三月 / 行進'], ['smart', '聰明的'], ['buzzing', '嗡嗡聲'], ['careful', '小心的'], 
-                ['fur', '毛'], ['hit', '打'], ['hole', '洞'], ['honey', '蜂蜜'], ['lick', '舔'], ['path', '小路'], 
-                ['sting', '螫'], ['stuck', '卡住的'], ['against', '反對'], ['hardly', '幾乎不'], ['meadow', '草地'], 
-                ['middle', '中間'], ['pit-pat', '噠噠聲'], ['space', '空間'], ['toss', '丟'], ['touch', '觸碰'], 
-                ['whistle', '口哨']
-            ],
-            // Week 14 missing in provided list, skipping to Week 15
-            'Week 15': [
-                ['baby', '嬰兒'], ['bunny', '小兔子'], ['city', '城市'], ['cry', '哭'], ['dry', '乾的'], 
-                ['fly', '飛'], ['fry', '炸'], ['happy', '快樂的'], ['party', '派對'], ['pony', '小馬'], 
-                ['silly', '傻的'], ['sky', '天空'], ['story', '故事'], ['chain', '鏈子'], ['chop', '切'], 
-                ['shed', '棚子'], ['shelf', '架子'], ['thick', '厚'], ['thin', '瘦的'], ['think', '思考'], 
-                ['thread', '線'], ['three', '三'], ['throat', '喉嚨'], ['whale', '鯨魚'], ['wheel', '輪子'], 
-                ['shines', '發光'], ['through', '穿過'], ['bouncing', '彈跳的'], ['spider', '蜘蛛'], ['webs', '網'], 
-                ['woods', '樹林'], ['glass', '玻璃'], ['tied together', '綁在一起'], ['drop', '掉下'], 
-                ['straight', '直的'], ['friendly', '友善的'], ['bless', '祝福'], ['blink', '眨眼'], ['crawl', '爬'], 
-                ['flat', '平的'], ['follow', '跟隨'], ['join', '加入'], ['rock', '岩石'], ['star', '星星'], 
-                ['swish', '唰地一聲']
-            ],
-            'Week 16': [
-                ['bath', '洗澡'], ['bench', '長凳'], ['branch', '樹枝'], ['brush', '刷子'], ['dish', '盤子'], 
-                ['ditch', '溝渠'], ['path', '小徑'], ['ring', '戒指'], ['swing', '盪鞦韆'], ['switch', '開關'], 
-                ['teeth', '牙齒'], ['watch', '手錶'], ['bird', '鳥'], ['more', '更多'], ['shirt', '襯衫'], 
-                ['horse', '馬'], ['first', '第一'], ['for', '為了'], ['girl', '女孩'], ['horn', '角'], 
-                ['dirt', '泥土'], ['short', '短的'], ['store', '商店'], ['morning', '早晨'], ['dinosaur', '恐龍'], 
-                ['third', '第三'], ['whirl', '旋轉'], ['appear', '出現'], ['decide', '決定'], ['furry', '毛茸茸的'], 
-                ['sister', '姐妹'], ['strange', '奇怪的'], ['tease', '取笑']
-            ],
-            'Week 17': [
-                ['barn', '穀倉'], ['card', '卡片'], ['dart', '飛鏢'], ['fern', '蕨類'], ['harp', '豎琴'], 
-                ['ladder', '梯子'], ['letter', '信'], ['number', '數字'], ['paper', '紙'], ['shark', '鯊魚'], 
-                ['slipper', '拖鞋'], ['water', '水'], ['yard', '院子'], ['flutter', '拍動'], ['flyer', '傳單'], 
-                ['minute', '分鐘'], ['nearby', '附近'], ['reach', '到達'], ['seem', '似乎'], ['throat', '喉嚨'], 
-                ['hummingbird', '蜂鳥'], ['afraid', '害怕'], ['exclaimed', '驚呼'], ['frightened', '害怕的'], 
-                ['lift', '抬起'], ['shut', '關上'], ['stretch', '伸展'], ['wide', '寬的']
-            ],
-            'Week 18': [
-                ['cork', '軟木塞'], ['corn', '玉米'], ['dirt', '泥土'], ['fork', '叉子'], ['horn', '角'], 
-                ['shirt', '襯衫'], ['short', '短的'], ['skirt', '裙子'], ['squirt', '噴出'], ['stir', '攪拌'], 
-                ['storm', '暴風雨'], ['third', '第三'], ['thorn', '荊棘'], ['burn', '燒'], ['curb', '路邊'], 
-                ['curl', '捲曲'], ['fur', '毛'], ['hurt', '受傷'], ['turn', '轉彎'], ['does', '做（第三人稱）'], 
-                ['were', '是（過去式）'], ['every', '每個'], ['very', '非常'], ['give', '給'], ['live', '生活'], 
-                ['thing', '東西'], ['your', '你的'], ['many', '許多'], ['who', '誰'], ['any', '任何'], 
-                ['away', '離開'], ['goes', '去（第三人稱）'], ['find', '找到'], ['kind', '種類 / 好的'], 
-                ['ago', '以前'], ['another', '另一個'], ['corner', '角落'], ['everywhere', '到處'], ['fold', '摺'], 
-                ['important', '重要的'], ['mouse', '老鼠'], ['neck', '脖子'], ['owl', '貓頭鷹'], ['sharp', '銳利的'], 
-                ['size', '尺寸'], ['supper', '晚餐'], ['argue', '爭吵'], ['bright', '明亮的'], ['button', '鈕扣'], 
-                ['chuckle', '輕笑'], ['ladybug', '瓢蟲'], ['prettiest', '最漂亮的'], ['shout', '叫喊'], 
-                ['spots', '斑點'], ['whole', '整個的']
-            ]
-        };
+function save(){ localStorage.setItem("pierce_spellingbee_v5", JSON.stringify(state)); }
 
-        const storeItems = [
-            { id: 1, name: "⭐ 閃亮煙火包", cost: 10, description: "解鎖煙火動畫，答對時隨機播放！" },
-            { id: 2, name: "🤖 機器人語音包", cost: 5, description: "將朗讀語音換成有趣的機器人聲！" },
-            { id: 3, name: "🎩 神秘帽造型", cost: 15, description: "解鎖 Pierce 專屬網站神秘帽視覺" },
-            { id: 4, name: "🎉 派對背景主題", cost: 20, description: "變更網站背景顏色與樣式" },
-            { id: 5, name: "🎵 勝利音效包", cost: 8, description: "更換答對時的音效" },
-        ];
+/** =============================
+ *  🔊 TTS 語音
+ *  ============================= */
+function speak(text){
+  if(!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  if(state.purchased.voicepack){ u.rate = 0.95; u.pitch = 1.02; u.volume = 1; }
+  u.lang = 'en-US';
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
 
-        // 狀態變量
-        let currentCoins = 0;
-        let streak = 0;
-        let currentWeekWords = [];
-        let currentWordIndex = -1;
-        let currentWord = '';
-        let currentChinese = '';
-        let quizState = 'pending'; // 'pending', 'answering', 'answered'
-        let purchasedItems = new Set();
-        let userRecordedHint = {}; // 儲存 { word: 'hint_text' }
+/** 🎵 答對音效（WebAudio 簡單提示） */
+let ac; function beep(){ if(!state.purchased.sound) return; ac = ac || new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(); const g=ac.createGain(); o.type='triangle'; o.frequency.value=880; g.gain.setValueAtTime(0.001, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.2, ac.currentTime+0.01); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.2); o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime+0.22); }
 
-        // DOM 元素
-        const weekSelect = document.getElementById('week-select');
-        const coinDisplay = document.getElementById('current-coins');
-        const streakDisplay = document.getElementById('streak-count');
-        const wordDisplay = document.getElementById('word-display');
-        const chineseDisplay = document.getElementById('chinese-display');
-        const input = document.getElementById('spelling-input');
-        const submitBtn = document.getElementById('submit-btn');
-        const repeatBtn = document.getElementById('repeat-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const messageArea = document.getElementById('message-area');
-        const recordBtn = document.getElementById('record-btn');
-        const playRecordBtn = document.getElementById('play-record-btn');
-        const shopArea = document.getElementById('shop-area');
-        const shopList = document.getElementById('shop-list');
-        const shopBtn = document.getElementById('shop-btn');
-        const rulesModal = document.getElementById('rules-modal');
-        const ruleBtn = document.getElementById('rule-btn');
-        const modalClose = document.getElementsByClassName('close')[0];
-        const userHintDisplay = document.getElementById('user-hint');
+/** =============================
+ *  🎆 煙火（簡易紙花）
+ *  ============================= */
+const fx = document.getElementById('fx');
+const ctx = fx.getContext('2d');
+function resizeFx(){ fx.width = innerWidth; fx.height = innerHeight; }
+addEventListener('resize', resizeFx); resizeFx();
+let confetti = [];
+function spawnConfetti(){
+  if(!state.purchased.fireworks) return;
+  for(let i=0;i<120;i++){
+    confetti.push({x: fx.width/2, y: fx.height/3, vx:(Math.random()-0.5)*6, vy:Math.random()*-6-2, a:1, r:2+Math.random()*3});
+  }
+}
+function tickFx(){
+  ctx.clearRect(0,0,fx.width,fx.height);
+  ctx.fillStyle = '#a6b3ff';
+  confetti.forEach(p=>{
+    p.vy += 0.12; p.x += p.vx; p.y += p.vy; p.a -= 0.01;
+    ctx.globalAlpha = Math.max(0,p.a);
+    ctx.fillRect(p.x,p.y,p.r,p.r);
+  });
+  confetti = confetti.filter(p=>p.a>0 && p.y<fx.height+20);
+  requestAnimationFrame(tickFx);
+}
+requestAnimationFrame(tickFx);
 
-        // 初始化
-        function init() {
-            loadState();
-            populateWeekSelect();
-            updateStatsDisplay();
-            setupEventListeners();
-            renderShop();
-            setupVoiceSelection(); // 確保語音合成對象可用
-        }
+/** =============================
+ *  🗂️ 週次與清單
+ *  ============================= */
+function initWeeks(){
+  weekSel.innerHTML = Object.keys(WORDS).map(w=>`<option ${w===state.currentWeek?'selected':''}>${w}</option>`).join('');
+  renderList();
+}
+function renderList(){
+  const arr = WORDS[state.currentWeek]||[];
+  wordList.innerHTML = `<details open><summary>${state.currentWeek} — 共 ${arr.length} 字</summary>` +
+    arr.map(w=>`<div class="word"><span>${w.en}</span><span class="muted">${w.zh}</span></div>`).join('')+`</details>`;
+}
 
-        // 載入/儲存狀態 (使用 localStorage 實現離線持久化)
-        function saveState() {
-            localStorage.setItem('pierce_coins', currentCoins);
-            localStorage.setItem('pierce_streak', streak);
-            localStorage.setItem('pierce_purchased', JSON.stringify(Array.from(purchasedItems)));
-            localStorage.setItem('pierce_hints', JSON.stringify(userRecordedHint));
-        }
+/** =============================
+ *  🧪 出題流程
+ *  ============================= */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
+function startWeek(){
+  const pool = WORDS[state.currentWeek]||[];
+  const idxs = [...Array(pool.length).keys()];
+  state.order = state.purchased.random ? shuffle(idxs) : idxs; // 有購買隨機模式才打亂
+  state.qIndex = -1; nextQuestion(); save();
+}
+function nextQuestion(){
+  const pool = WORDS[state.currentWeek]||[];
+  if(pool.length===0){ feedback.textContent='此週尚無單字'; return; }
+  state.qIndex = (state.qIndex+1) % pool.length;
+  state.currentWord = pool[state.order[state.qIndex]];
+  state.played = 0; playedEl.textContent = '0';
+  answer.value = ''; answer.focus();
+  feedback.textContent = ''; explain.textContent = ''; sentenceEl.textContent='';
+  speakOnce();
+}
+function speakOnce(){ if(!state.currentWord) return; speak(state.currentWord.en); state.played++; playedEl.textContent = String(state.played); }
 
-        function loadState() {
-            currentCoins = parseInt(localStorage.getItem('pierce_coins') || '0');
-            streak = parseInt(localStorage.getItem('pierce_streak') || '0');
-            const savedPurchased = localStorage.getItem('pierce_purchased');
-            if (savedPurchased) {
-                purchasedItems = new Set(JSON.parse(savedPurchased));
-            }
-            const savedHints = localStorage.getItem('pierce_hints');
-            if (savedHints) {
-                userRecordedHint = JSON.parse(savedHints);
-            }
-        }
+function check(){
+  if(!state.currentWord) return;
+  const guess = answer.value.trim(); if(!guess) return;
+  const correct = state.currentWord.en.toLowerCase();
+  if(guess.toLowerCase()===correct){
+    state.streak++;
+    const earned = 1 + bonusForStreak(state.streak);
+    state.coins += earned;
+    feedback.innerHTML = `<span class="good">✅ 答對！</span> 此題獲得 <span class="earned">${earned}🪙</span>`;
+    explain.textContent = `${state.currentWord.en} — ${state.currentWord.zh}`;
+    if(state.purchased.sentence){ sentenceEl.textContent = `例句：The ${state.currentWord.en} is here.`; }
+    if(state.purchased.fireworks) spawnConfetti();
+    beep();
+    updateHeader(); save();
+  }else{
+    state.streak = 0;
+    feedback.innerHTML = `<span class="bad">❌ 答錯</span>`;
+    explain.textContent = `${state.currentWord.en} — ${state.currentWord.zh}`; // 依需求：答錯直接顯示中文
+    if(state.purchased.sentence){ sentenceEl.textContent = `例句：I can spell ${state.currentWord.en}.`; }
+    updateHeader(); save();
+  }
+}
+function bonusForStreak(n){
+  if(n===3) return 1; if(n===5) return 3; if(n===10) return 5; if(n===20) return 10; return 0;
+}
+function updateHeader(){
+  coinsEl.textContent = state.coins; streakEl.textContent = state.streak;
+  answerWrap.classList.toggle('cool', !!state.purchased.coolinput);
+  if(state.purchased.theme){ document.documentElement.style.setProperty('--bg','#0a1324'); document.documentElement.style.setProperty('--accent','#a78bfa'); }
+}
 
-        // 填充週次選擇下拉菜單
-        function populateWeekSelect() {
-            let options = '<option value="">-- 請選擇週次 --</option>';
-            for (let i = 1; i <= 18; i++) {
-                if (wordList[`Week ${i}`]) {
-                    options += `<option value="Week ${i}">Week ${i}</option>`;
-                }
-            }
-            weekSelect.innerHTML = options;
-        }
+/** =============================
+ *  🛒 商店
+ *  ============================= */
+const prices = { fireworks:30, voicepack:20, coolinput:15, theme:25, sound:20, sentence:10, random:10 };
+function initStore(){
+  document.querySelectorAll('.buy').forEach(btn=>{
+    const key = btn.dataset.item;
+    const refresh = ()=>{
+      if(state.purchased[key]){ btn.textContent='已擁有'; btn.disabled=true; const priceEl = btn.closest('.store-item').querySelector('.price'); if(priceEl) priceEl.outerHTML='<span class="owned">✔ 已擁有</span>'; }
+    };
+    btn.addEventListener('click',()=>{
+      if(state.purchased[key]) return;
+      const cost = prices[key];
+      if(state.coins < cost){ alert('金幣不足！'); return; }
+      state.coins -= cost; state.purchased[key]=true; save(); updateHeader(); refresh();
+    });
+    refresh();
+  });
+}
 
-        // 設置事件監聽器
-        function setupEventListeners() {
-            weekSelect.addEventListener('change', startNewWeek);
-            nextBtn.addEventListener('click', loadNextWord);
-            repeatBtn.addEventListener('click', () => speakWord(currentWord));
-            submitBtn.addEventListener('click', checkSpelling);
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && quizState === 'answering') {
-                    checkSpelling();
-                }
-            });
-            shopBtn.addEventListener('click', toggleShop);
-            ruleBtn.addEventListener('click', () => rulesModal.style.display = 'block');
-            modalClose.addEventListener('click', () => rulesModal.style.display = 'none');
-            window.addEventListener('click', (event) => {
-                if (event.target === rulesModal) {
-                    rulesModal.style.display = 'none';
-                }
-            });
+/** =============================
+ *  🎙️ 錄音（IndexedDB 持久化）
+ *  ============================= */
+let media, recorder, chunks=[];
+const recBtn = document.getElementById('recBtn');
+const playRec = document.getElementById('playRec');
+const recStatus = document.getElementById('recStatus');
 
-            // 錄音/播放 (模擬功能)
-            recordBtn.addEventListener('click', simulateRecordHint);
-            playRecordBtn.addEventListener('click', playRecordedHint);
-        }
+let db;
+const DB_NAME='pierce_audio_v1', STORE='clips';
+function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open(DB_NAME,1); r.onupgradeneeded=()=>{ r.result.createObjectStore(STORE); }; r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function idbPut(key, blob){ db = db || await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(blob,key); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
+async function idbGet(key){ db = db || await idbOpen(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readonly'); const g=tx.objectStore(STORE).get(key); g.onsuccess=()=>res(g.result||null); g.onerror=()=>rej(g.error); }); }
 
-        // 語音朗讀設置
-        let speaker = null;
-        let voice = null;
-        function setupVoiceSelection() {
-             speaker = window.speechSynthesis;
-             // 嘗試選擇一個英文女聲或男聲
-             speaker.onvoiceschanged = () => {
-                const voices = speaker.getVoices();
-                voice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google US English')); // 優先選擇
-                if (!voice) {
-                    voice = voices.find(v => v.lang.startsWith('en')); // 備用
-                }
-                // 如果購買了機器人語音包，可以嘗試設置不同的 voice
-                if (purchasedItems.has(2)) {
-                    voice = voices.find(v => v.name.includes('Robot') || v.name.includes('Vicki') || v.name.includes('Alex'));
-                }
-             };
-             // 立即嘗試獲取，以防事件沒有觸發
-             const voices = speaker.getVoices();
-             if(voices.length > 0) setupVoiceSelection();
-        }
+function currentKey(){ return `${state.currentWeek}|${state.currentWord?state.currentWord.en:''}`; }
 
+async function startRec(){
+  try{
+    media = await navigator.mediaDevices.getUserMedia({audio:true});
+    recorder = new MediaRecorder(media);
+    chunks=[];
+    recorder.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
+    recorder.onstop=async()=>{
+      const blob = new Blob(chunks,{type:'audio/webm'});
+      try{ await idbPut(currentKey(), blob); playRec.disabled=false; recStatus.textContent='錄音已儲存'; }catch(e){ console.warn(e); recStatus.textContent='無法儲存錄音'; }
+    };
+    recorder.start();
+    recBtn.textContent='停止'; recStatus.textContent='錄音中…';
+  }catch(e){
+    alert('錄音不可用：需要 https/localhost 或瀏覽器權限');
+  }
+}
+function stopRec(){ if(recorder && recorder.state!=='inactive'){ recorder.stop(); media.getTracks().forEach(t=>t.stop()); recBtn.textContent='錄音'; }
+}
+recBtn.addEventListener('click',()=>{ if(recorder && recorder.state==='recording'){ stopRec(); } else { startRec(); } });
+playRec.addEventListener('click', async()=>{
+  const blob = await idbGet(currentKey());
+  if(!blob){ alert('此單字尚無錄音'); return; }
+  const url = URL.createObjectURL(blob); const a = new Audio(url); a.play();
+});
 
-        // 朗讀單字 (TTS)
-        function speakWord(word) {
-            if (!speaker) {
-                messageArea.innerHTML = '<div class="error-msg">語音合成不可用，請檢查瀏覽器設定。</div>';
-                return;
-            }
-            if (speaker.speaking) {
-                speaker.cancel();
-            }
-            const utterance = new SpeechSynthesisUtterance(word);
-            utterance.lang = 'en-US';
-            if (voice) {
-                utterance.voice = voice;
-            } else {
-                // 如果沒有找到特定 voice，使用預設值
-                utterance.pitch = purchasedItems.has(2) ? 0.5 : 1; // 機器人聲調
-                utterance.rate = purchasedItems.has(2) ? 0.9 : 1; // 機器人速度
-            }
-            speaker.speak(utterance);
-        }
+/** =============================
+ *  🧩 事件與初始化
+ *  ============================= */
+initWeeks(); initStore(); startWeek();
 
-        // 開始新的週次
-        function startNewWeek() {
-            const selectedWeek = weekSelect.value;
-            if (!selectedWeek) {
-                currentWeekWords = [];
-                resetQuizArea();
-                wordDisplay.textContent = '請選擇週次並點擊「下一題」開始';
-                nextBtn.disabled = true;
-                return;
-            }
-            currentWeekWords = [...wordList[selectedWeek]]; // 複製陣列，避免修改原始數據
-            shuffleArray(currentWeekWords);
-            currentWordIndex = -1;
-            resetQuizArea();
-            wordDisplay.textContent = `${selectedWeek} 已載入。準備好了嗎？`;
-            nextBtn.disabled = false;
-        }
+weekSel.addEventListener('change',()=>{ state.currentWeek = weekSel.value; renderList(); startWeek(); save(); });
+newQBtn.addEventListener('click', nextQuestion);
+replayBtn.addEventListener('click', speakOnce);
+submitBtn.addEventListener('click', check);
+answer.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ check(); } });
+document.addEventListener('keydown', (e)=>{ if(e.key.toLowerCase()==='t'){ speakOnce(); } });
 
-        // 載入下一題
-        function loadNextWord() {
-            if (currentWeekWords.length === 0) {
-                wordDisplay.textContent = '本週單字已全部完成！請選擇其他週次。';
-                chineseDisplay.textContent = '';
-                resetQuizArea();
-                nextBtn.disabled = true;
-                return;
-            }
+toggleListBtn.addEventListener('click',()=>{ wordList.hidden = !wordList.hidden; });
 
-            // 重置狀態
-            resetQuizArea();
-            quizState = 'answering';
+// 已有錄音就允許播放
+setInterval(async()=>{ if(!state.currentWord) return; const b = await idbGet(currentKey()); playRec.disabled = !b; }, 1200);
 
-            // 取得下一組單字
-            currentWordIndex = (currentWordIndex + 1) % currentWeekWords.length;
-            const [word, chinese] = currentWeekWords[currentWordIndex];
-            currentWord = word.toLowerCase(); // 轉換為小寫以確保檢查一致性
-            currentChinese = chinese;
+// 規則對話框
+const dlg = document.getElementById('rulesDlg');
+document.getElementById('showRules').onclick=()=>dlg.showModal();
+document.getElementById('closeRules').onclick=()=>dlg.close();
 
-            // 顯示與控制
-            wordDisplay.textContent = '🎧 正在朗讀...';
-            chineseDisplay.textContent = ''; // 隱藏中文
-            input.value = '';
-            input.disabled = false;
-            submitBtn.disabled = false;
-            repeatBtn.disabled = false;
-            nextBtn.disabled = true;
-            
-            // 自動朗讀
-            speakWord(currentWord);
-
-            // 檢查是否有錄音提示
-            if (userRecordedHint[currentWord]) {
-                userHintDisplay.innerHTML = `**您的提示：** <span style="color: blue;">"${userRecordedHint[currentWord]}"</span>`;
-                playRecordBtn.disabled = false;
-            } else {
-                userHintDisplay.innerHTML = '您還沒有為這個詞錄製提示。';
-                playRecordBtn.disabled = true;
-            }
-            recordBtn.disabled = false;
-
-            wordDisplay.textContent = '❓ 請拼寫單字...';
-        }
-
-        // 檢查拼寫
-        function checkSpelling() {
-            if (quizState !== 'answering') return;
-
-            const answer = input.value.trim().toLowerCase();
-            const correctWord = currentWord;
-
-            if (answer === correctWord) {
-                // 答對
-                quizState = 'answered';
-                
-                // 計算金幣
-                const coinsEarned = calculateCoins();
-                currentCoins += coinsEarned;
-                streak++;
-                
-                // 顯示結果
-                wordDisplay.textContent = `✅ 正確拼字: ${correctWord}`;
-                chineseDisplay.textContent = `中文: ${currentChinese}`;
-                messageArea.innerHTML = `<div class="success-msg">恭喜！答對了！🎉 獲得 ${coinsEarned} 幣。連續答對 ${streak} 題！</div>`;
-                
-                // 視覺效果 (煙火/音效)
-                applyShopEffects('win');
-
-                // 更新狀態和控制
-                updateStatsDisplay();
-                saveState();
-                disableQuizControls(true);
-
-            } else {
-                // 答錯
-                streak = 0; // 連續答對歸零
-                updateStatsDisplay();
-                messageArea.innerHTML = '<div class="error-msg">❌ 答錯了，請再試一次！</div>';
-                input.value = ''; // 清空輸入框
-                input.focus(); // 保持焦點
-            }
-        }
-
-        // 計算金幣
-        function calculateCoins() {
-            let baseCoin = 1;
-            let bonusCoin = 0;
-
-            // 連續答對 bonus 機制：這裡計算的是「如果這次答對，將會達到的連續答對數」
-            const newStreak = streak + 1;
-
-            if (newStreak >= 20 && newStreak % 20 === 0) {
-                 bonusCoin = 10;
-            } else if (newStreak >= 10 && newStreak % 10 === 0) {
-                 bonusCoin = 5;
-            } else if (newStreak >= 5 && newStreak % 5 === 0) {
-                bonusCoin = 3;
-            } else if (newStreak >= 3 && newStreak % 3 === 0) {
-                bonusCoin = 1;
-            }
-
-            return baseCoin + bonusCoin;
-        }
-
-        // 重置測驗區域
-        function resetQuizArea() {
-            quizState = 'pending';
-            currentWord = '';
-            currentChinese = '';
-            wordDisplay.textContent = '請點擊「下一題」開始';
-            chineseDisplay.textContent = '';
-            input.value = '';
-            messageArea.innerHTML = '';
-            userHintDisplay.innerHTML = '';
-            disableQuizControls(false);
-        }
-
-        // 禁用/啟用測驗控制項
-        function disableQuizControls(isAnswered) {
-            input.disabled = isAnswered;
-            submitBtn.disabled = isAnswered;
-            repeatBtn.disabled = isAnswered;
-            nextBtn.disabled = !isAnswered && currentWeekWords.length > 0;
-            recordBtn.disabled = isAnswered;
-            playRecordBtn.disabled = isAnswered;
-
-            if (!isAnswered && weekSelect.value) {
-                // 準備答題
-                input.disabled = false;
-                submitBtn.disabled = false;
-                repeatBtn.disabled = false;
-            } else if (!weekSelect.value) {
-                 // 尚未選擇週次
-                 nextBtn.disabled = true;
-            } else if (currentWeekWords.length === 0) {
-                nextBtn.disabled = true;
-            }
-        }
-
-        // 更新頂部狀態欄
-        function updateStatsDisplay() {
-            coinDisplay.textContent = currentCoins;
-            streakDisplay.textContent = streak;
-        }
-
-        // 混洗陣列 (Fisher-Yates)
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-
-        // 商店功能
-        function renderShop() {
-            shopList.innerHTML = '';
-            storeItems.forEach(item => {
-                const isPurchased = purchasedItems.has(item.id);
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'shop-item';
-                itemDiv.innerHTML = `
-                    <div class="item-info">
-                        <h4>${item.name} ${isPurchased ? '(已擁有)' : ''}</h4>
-                        <p>${item.description}</p>
-                    </div>
-                    ${isPurchased 
-                        ? '<button disabled>已購買</button>' 
-                        : `<button class="buy-btn" data-id="${item.id}" data-cost="${item.cost}">購買 (${item.cost} 💰)</button>`
-                    }
-                `;
-                shopList.appendChild(itemDiv);
-            });
-
-            // 為新的購買按鈕添加事件監聽器
-            shopList.querySelectorAll('.buy-btn:not([disabled])').forEach(button => {
-                button.addEventListener('click', buyItem);
-            });
-        }
-
-        function buyItem(event) {
-            const id = parseInt(event.target.getAttribute('data-id'));
-            const cost = parseInt(event.target.getAttribute('data-cost'));
-            const item = storeItems.find(i => i.id === id);
-
-            if (currentCoins >= cost) {
-                currentCoins -= cost;
-                purchasedItems.add(id);
-                updateStatsDisplay();
-                saveState();
-                renderShop();
-                alert(`恭喜您購買了 ${item.name}！🎉`);
-                
-                // 執行購買後的動作 (例如：更新語音設定)
-                if (id === 2) { // 機器人語音包
-                     setupVoiceSelection();
-                }
-
-            } else {
-                alert(`金幣不足！您需要 ${cost} 幣才能購買 ${item.name}。`);
-            }
-        }
-
-        function toggleShop() {
-            if (shopArea.style.display === 'none') {
-                shopArea.style.display = 'block';
-                renderShop(); // 每次開啟都重新渲染以更新狀態
-            } else {
-                shopArea.style.display = 'none';
-            }
-        }
-
-        // 模擬錄音功能
-        function simulateRecordHint() {
-             if (!currentWord) return;
-             const hint = prompt(`請為單字「${currentWord}」錄製/輸入一個提示 (例如：媽媽說的中文，或一個小故事)：`);
-             if (hint && hint.trim()) {
-                 userRecordedHint[currentWord] = hint.trim();
-                 userHintDisplay.innerHTML = `**您的提示：** <span style="color: blue;">"${hint.trim()}"</span> (已儲存)`;
-                 playRecordBtn.disabled = false;
-                 saveState();
-                 alert(`提示已為「${currentWord}」儲存！`);
-             }
-        }
-
-        function playRecordedHint() {
-            if (userRecordedHint[currentWord]) {
-                alert(`播放提示 (模擬)：\n\n${userRecordedHint[currentWord]}`);
-            } else {
-                alert('這個單字沒有錄製提示。');
-            }
-        }
-
-        // 應用商店效果
-        function applyShopEffects(type) {
-             if (type === 'win' && purchasedItems.has(1)) { // 閃亮煙火包
-                 // 簡單模擬煙火效果
-                 const fireworks = ['✨', '💥', '🎆', '💫', '🌟'];
-                 const effect = fireworks[Math.floor(Math.random() * fireworks.length)];
-                 messageArea.innerHTML += ` ${effect}`;
-             }
-             if (type === 'win' && purchasedItems.has(5)) { // 勝利音效包
-                  // 播放自定義音效（需要音頻文件，這裡僅模擬）
-                  console.log('播放勝利音效！');
-             }
-             if (purchasedItems.has(3)) { // 神秘帽造型
-                 document.querySelector('#header').style.backgroundColor = '#6A1B9A'; // 變更顏色模擬造型
-             }
-             if (purchasedItems.has(4)) { // 派對背景主題
-                 document.body.style.backgroundColor = '#E0F7FA'; // 變更背景色
-             }
-        }
-
-
-        // 程式啟動
-        init();
-
-    </script>
-
+  </script>
 </body>
 </html>
