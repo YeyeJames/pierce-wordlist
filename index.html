@@ -1,125 +1,1852 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pierce 專用拼字練習 — 離線版 v6</title>
-  <style>
-    body{font-family:'Segoe UI',sans-serif;background:#0d1224;color:#e8ecff;margin:0;padding-top:80px}
-    header{position:fixed;top:0;left:0;right:0;background:#131a35;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-    .stats{display:flex;gap:20px;font-weight:700}
-    .coin{color:#facc15}
-    main{display:flex;gap:20px;padding:20px;max-width:1200px;margin:auto}
-    section,aside{background:#1b2345;border:1px solid #2a3560;border-radius:12px;padding:20px;flex:1}
-    h2{margin-top:0;color:#7dd3fc}
-    .btn{background:#1e2b60;color:white;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:700}
-    .btn:hover{background:#293a80}
-    input{padding:10px;border-radius:8px;border:1px solid #32406b;background:#0e1530;color:white;width:100%;font-size:18px}
-    .store-item{display:flex;justify-content:space-between;align-items:center;margin:8px 0;padding:10px;border:1px dashed #405080;border-radius:10px}
-    .price{color:#facc15;font-weight:700}
-    .owned{color:#22c55e;font-weight:700}
-    select{padding:6px 10px;border-radius:8px;background:#0e1530;color:white;border:1px solid #32406b}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pierce Spelling Bee v11.5 — 蜂巢主題離線版</title>
+<!--
+  Pierce Spelling Bee v11.5 — 單檔離線版
+  - 含 Week 1–18 題庫（內嵌）＋ Week 19 錯題重練
+  - 預設美式 TTS（en-US）；購買語音包後可切換英式（en-GB）
+  - 支援 IndexedDB 錄音、localStorage 進度保存、商店系統、蜂巢主題
+  - 可離線使用（單一 HTML 檔）
+-->
+<style>
+:root{
+  --bg:#ffe36e;          /* 主背景亮黃 */
+  --bg-hex:#ffe36e;
+  --text:#111;           /* 文字黑 */
+  --accent:#ffbf00;      /* 橘黃 */
+  --accent-dark:#d89a00;
+  --panel:#fff7c7;       /* 卡片底 */
+  --border:#000;         /* 黑色邊框 */
+  --good:#0a7a2f;
+  --bad:#b00020;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+button,input,select{font:inherit}
+a{color:inherit}
+body::before{
+  content:"";
+  position:fixed;inset:0;z-index:-1;opacity:.25;
+  background:
+    radial-gradient(circle at 100% 150%, var(--bg-hex) 24%, transparent 26%),
+    radial-gradient(circle at 0 150%, var(--bg-hex) 24%, transparent 26%),
+    linear-gradient(0deg, transparent 24%, rgba(0,0,0,.06) 24%, rgba(0,0,0,.06) 26%, transparent 26%),
+    linear-gradient(60deg, transparent 74%, rgba(0,0,0,.06) 74%, rgba(0,0,0,.06) 76%, transparent 76%),
+    linear-gradient(-60deg, transparent 74%, rgba(0,0,0,.06) 74%, rgba(0,0,0,.06) 76%, transparent 76%);
+  background-size:80px 45px,80px 45px,80px 45px,80px 45px,80px 45px;
+  background-position:0 0,40px 22.5px,0 0,0 0,0 0;
+}
+#header{
+  position:sticky;top:0;z-index:5;
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  padding:10px 12px;border-bottom:3px solid var(--border);
+  background:linear-gradient(#ffe980,#ffd84d);
+  box-shadow:0 4px 0 #0003;
+}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--border);padding:6px 10px;border-radius:12px;box-shadow:2px 2px 0 #0005}
+.badge .coin{font-weight:700}
+.spacer{flex:1}
+.btn{
+  background:var(--panel);border:2px solid var(--border);padding:8px 12px;border-radius:12px;cursor:pointer;
+  box-shadow:3px 3px 0 #0006;font-weight:700
+}
+.btn:hover{background:var(--accent)}
+.btn:active{transform:translateY(1px)}
+.btn.solid{background:var(--accent);border-color:#000}
+.btn.dark{background:#222;color:#fff;border-color:#000}
+.btn.ghost{background:transparent}
+#main{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;padding:12px}
+@media (max-width:960px){#main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:2px solid var(--border);border-radius:16px;padding:14px;box-shadow:4px 4px 0 #0006}
+#prompt{font-size:20px;font-weight:800;margin:6px 0 2px}
+#zh{margin:6px 0 12px;color:#333}
+#answer{width:100%;padding:12px;border:3px solid #000;border-radius:12px;outline:none;background:#fff}
+.cool-input{border:3px solid #000;background:#111;color:#fff;box-shadow:inset 0 0 0 3px #fff, 4px 4px 0 #0006;font-weight:800;letter-spacing:.5px}
+#sideHeader{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:10px}
+#wordListWrap{max-height:48vh;overflow:auto;border:2px dashed #000;border-radius:12px;padding:8px;background:#fff}
+#wordListWrap.hide{display:none}
+.word-item{padding:6px 8px;border-bottom:1px dashed #ccc}
+.word-item:last-child{border-bottom:0}
+.shop-item{display:flex;align-items:center;gap:10px;padding:10px;border:2px solid #000;border-radius:12px;margin:8px 0;background:#fff}
+.shop-item .price{margin-left:auto;font-weight:800}
+.shop-item .buy{margin-left:6px}
+.purchased{opacity:.55}
+.note{font-size:12px;color:#333}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:10}
+.modal.show{display:flex}
+.modal .dialog{background:#fff;border:3px solid #000;border-radius:12px;max-width:520px;width:92%;padding:14px}
+.modal h3{margin:0 0 8px}
+#fxCanvas{position:fixed;inset:0;pointer-events:none}
+#msg{font-weight:800}
+.good{color:var(--good)} .bad{color:var(--bad)}
+.small{font-size:12px;color:#333}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+hr{border:none;border-top:2px dashed #0006;margin:12px 0}
+</style>
 </head>
 <body>
-  <header>
-    <div class="stats">
-      <div>🪙 金幣：<span id="coins">0</span></div>
-      <div>🔥 連續：<span id="streak">0</span></div>
+<canvas id="fxCanvas"></canvas>
+<header id="header">
+  <div class="badge">🪙 金幣：<span id="coins" class="coin">0</span></div>
+  <div class="badge">🔥 連續答對：<span id="streak">0</span></div>
+  <button id="btnRules" class="btn">金幣規則</button>
+  <div class="spacer"></div>
+  <select id="weekSel" class="btn"></select>
+  <button id="btnListen" class="btn">再聽一次 🔊</button>
+  <button id="btnNext" class="btn solid">下一題 ▶</button>
+</header>
+<main id="main">
+  <section class="card">
+    <div id="prompt">🔈—</div>
+    <div id="zh" class="small">（作答後顯示中文）</div>
+    <div class="row">
+      <input id="answer" type="text" placeholder="輸入正確拼字，按 Enter 或 送出" autocomplete="off" />
+      <button id="btnSubmit" class="btn">送出</button>
+      <button id="btnClear" class="btn ghost">清空</button>
+    </div>
+    <div id="msg"></div>
+    <hr/>
+    <h3>🎙️ 錄音與播放</h3>
+    <div class="row">
+      <button id="recStart" class="btn dark">開始錄音</button>
+      <button id="recStop" class="btn">停止</button>
+      <button id="recPlay" class="btn">播放錄音</button>
+    </div>
+    <div class="small">每個單字可錄一段音，會離線保存在本機 IndexedDB。</div>
+  </section>
+  <aside class="card">
+    <div id="sideHeader">
+      <h3 style="margin:0">🛒 商店 & 單字清單</h3>
+      <div class="row" style="margin:0">
+        <button id="btnShowList" class="btn">顯示/隱藏清單</button>
+        <button id="btnImportBanks" class="btn">一鍵匯入題庫</button>
+      </div>
     </div>
     <div>
-      <label for="weekSel">週次：</label>
-      <select id="weekSel"></select>
-      <button id="nextQ" class="btn">下一題</button>
-      <button id="listen" class="btn">再聽一次 🔊</button>
-    </div>
-  </header>
-  <main>
-    <section>
-      <h2>🎧 聽寫練習</h2>
-      <input id="answer" placeholder="輸入拼字..." />
-      <div style="margin-top:10px;display:flex;gap:10px">
-        <button id="submit" class="btn">送出</button>
+      <div class="shop-item" data-key="fireworks" data-price="30">
+        <span>✨ 煙火特效</span>
+        <span class="price">30🪙</span>
+        <button class="btn buy">購買</button>
       </div>
-      <div id="feedback" style="margin-top:10px"></div>
-      <div id="explain" style="color:#a0a8d8"></div>
-      <h3>🎙️ 錄音提示</h3>
-      <button id="record" class="btn">錄音</button>
-      <button id="playRec" class="btn">播放錄音</button>
-      <audio id="audioPlayer" controls hidden></audio>
-    </section>
+      <div class="shop-item" data-key="voicepack" data-price="20">
+        <span>🗣️ 語音包（英式 TTS）</span>
+        <span class="price">20🪙</span>
+        <button class="btn buy">購買</button>
+      </div>
+      <div class="shop-item" data-key="coolinput" data-price="15">
+        <span>🆒 酷炫輸入框</span>
+        <span class="price">15🪙</span>
+        <button class="btn buy">購買</button>
+      </div>
+      <div class="shop-item" data-key="theme" data-price="25">
+        <span>🎨 主題顏色包（預留）</span>
+        <span class="price">25🪙</span>
+        <button class="btn buy">購買</button>
+      </div>
+      <div class="shop-item" data-key="sfx" data-price="20">
+        <span>🔔 答對音效包（離線佔位）</span>
+        <span class="price">20🪙</span>
+        <button class="btn buy">購買</button>
+      </div>
+      <div class="shop-item" data-key="examples" data-price="10">
+        <span>🧵 例句顯示（預留）</span>
+        <span class="price">10🪙</span>
+        <button class="btn buy">購買</button>
+      </div>
+      <div class="shop-item" data-key="random" data-price="10">
+        <span>🎲 隨機模式</span>
+        <span class="price">10🪙</span>
+        <button class="btn buy">購買</button>
+      </div>
+      <div class="note">購買狀態與金幣餘額會儲存在 localStorage。</div>
+    </div>
+    <hr/>
+    <div id="wordListWrap" class="hide">
+      <div id="wordList"></div>
+    </div>
+  </aside>
+</main>
+<div id="rules" class="modal">
+  <div class="dialog">
+    <h3>💰 金幣獲取規則</h3>
+    <ol>
+      <li>答對 +1</li>
+      <li>連3 額外 +1</li>
+      <li>連5 額外 +3</li>
+      <li>連10 額外 +5</li>
+      <li>連20 額外 +10</li>
+      <li>答錯不扣分；連擊歸零並記入「錯題庫」</li>
+    </ol>
+    <div class="row">
+      <button id="btnClearWrong" class="btn">清空錯題（Week 19）</button>
+      <div class="spacer"></div>
+      <button id="closeRules" class="btn">關閉</button>
+    </div>
+  </div>
+</div>
+<script>
+// === LocalStorage helpers ===
+const KEY = "sb_pierce_v115";
+const getLS = (k, def) => {
+  try{ const v = localStorage.getItem(KEY+"_"+k); return v? JSON.parse(v): def; }catch(e){ return def; }
+};
+const setLS = (k, v) => localStorage.setItem(KEY+"_"+k, JSON.stringify(v));
 
-    <aside>
-      <h2>🛒 商店</h2>
-      <div class="store-item"><span>煙火特效</span><span class="price">30🪙</span><button class="btn buy" data-item="fireworks">購買</button></div>
-      <div class="store-item"><span>語音包</span><span class="price">20🪙</span><button class="btn buy" data-item="voicepack">購買</button></div>
-      <div class="store-item"><span>酷炫輸入框</span><span class="price">15🪙</span><button class="btn buy" data-item="coolinput">購買</button></div>
-      <div class="store-item"><span>✨ 主題顏色包</span><span class="price">25🪙</span><button class="btn buy" data-item="theme">購買</button></div>
-      <div class="store-item"><span>🎵 答對音效包</span><span class="price">20🪙</span><button class="btn buy" data-item="sound">購買</button></div>
-      <div class="store-item"><span>📜 顯示例句功能</span><span class="price">10🪙</span><button class="btn buy" data-item="sentence">購買</button></div>
-      <div class="store-item"><span>🧭 隨機模式切換</span><span class="price">10🪙</span><button class="btn buy" data-item="random">購買</button></div>
-    </aside>
-  </main>
+// === 內嵌題庫（Week 1–18），Week 19 為錯題區 ===
+const DEFAULT_BANKS = {
+  1: [
+      {en:"bank", zh:"銀行"},
+      {en:"camp", zh:"露營"},
+      {en:"hand", zh:"手"},
+      {en:"paint", zh:"油漆"},
+      {en:"plant", zh:"植物"},
+      {en:"pond", zh:"池塘"},
+      {en:"pump", zh:"幫浦"},
+      {en:"stamp", zh:"郵票"},
+      {en:"stand", zh:"站立"},
+      {en:"stump", zh:"樹樁"},
+      {en:"wind", zh:"風"},
+      {en:"wink", zh:"眨眼"},
+      {en:"hungry", zh:"飢餓的"},
+      {en:"lapping", zh:"舔、拍打（水）"},
+      {en:"milk", zh:"牛奶"},
+      {en:"quiet", zh:"安靜的"},
+      {en:"television", zh:"電視"},
+      {en:"backyard", zh:"後院"},
+      {en:"basement", zh:"地下室"},
+      {en:"clean", zh:"打掃"},
+      {en:"fly up", zh:"飛起來"},
+      {en:"keep-away", zh:"躲避遊戲"},
+      {en:"near", zh:"近的"},
+      {en:"paint", zh:"油漆"},
+      {en:"upstairs", zh:"楼上"}
+  ],
+  2: [
+      {en:"belt", zh:"皮帶"},
+      {en:"elf", zh:"小精靈"},
+      {en:"gift", zh:"禮物"},
+      {en:"golf", zh:"高爾夫"},
+      {en:"left", zh:"左邊"},
+      {en:"lift", zh:"提起"},
+      {en:"melt", zh:"融化"},
+      {en:"quilt", zh:"棉被"},
+      {en:"raft", zh:"木筏"},
+      {en:"shelf", zh:"架子"},
+      {en:"wilt", zh:"枯萎"},
+      {en:"wolf", zh:"狼"},
+      {en:"came", zh:"來了"},
+      {en:"bait", zh:"餌"},
+      {en:"rake", zh:"耙子"},
+      {en:"hay", zh:"乾草"},
+      {en:"plate", zh:"盤子"},
+      {en:"pail", zh:"水桶"},
+      {en:"cane", zh:"拐杖"},
+      {en:"raise", zh:"舉起"},
+      {en:"grape", zh:"葡萄"},
+      {en:"say", zh:"說"},
+      {en:"aid", zh:"幫助"},
+      {en:"pain", zh:"疼痛"},
+      {en:"trail", zh:"小徑"},
+      {en:"stain", zh:"汙漬"},
+      {en:"blaze", zh:"火焰"},
+      {en:"almost", zh:"幾乎"},
+      {en:"dishes", zh:"盤子"},
+      {en:"everyone", zh:"每個人"},
+      {en:"family", zh:"家人"},
+      {en:"later", zh:"之後"},
+      {en:"soup", zh:"湯"},
+      {en:"still", zh:"仍然"},
+      {en:"together", zh:"一起"},
+      {en:"window", zh:"窗戶"},
+      {en:"children", zh:"孩子們"},
+      {en:"collar", zh:"領子"},
+      {en:"heel", zh:"腳跟"},
+      {en:"hurt", zh:"受傷"},
+      {en:"in front of", zh:"在…前面"},
+      {en:"lean", zh:"傾斜"},
+      {en:"pet store", zh:"寵物店"},
+      {en:"snort", zh:"噴鼻息"}
+  ],
+  3: [
+      {en:"scrape", zh:"刮"},
+      {en:"scratch", zh:"抓"},
+      {en:"screen", zh:"螢幕"},
+      {en:"scrub", zh:"用力擦"},
+      {en:"splash", zh:"濺起"},
+      {en:"split", zh:"分開"},
+      {en:"sprain", zh:"扭傷"},
+      {en:"spray", zh:"噴灑"},
+      {en:"spring", zh:"春天 / 彈簧"},
+      {en:"strap", zh:"皮帶"},
+      {en:"stripes", zh:"條紋"},
+      {en:"strong", zh:"強壯的"},
+      {en:"deep", zh:"深的"},
+      {en:"meal", zh:"一餐"},
+      {en:"sheep", zh:"羊"},
+      {en:"each", zh:"每一個"},
+      {en:"wheel", zh:"輪子"},
+      {en:"treat", zh:"招待"},
+      {en:"bean", zh:"豆子"},
+      {en:"seen", zh:"看見（過去分詞）"},
+      {en:"team", zh:"團隊"},
+      {en:"dream", zh:"夢"},
+      {en:"mean", zh:"意思是"},
+      {en:"leave", zh:"離開"},
+      {en:"cream", zh:"奶油"},
+      {en:"sleep", zh:"睡覺"},
+      {en:"sneeze", zh:"打噴嚏"},
+      {en:"copies", zh:"副本"},
+      {en:"enough", zh:"足夠"},
+      {en:"library", zh:"圖書館"},
+      {en:"number", zh:"數字"},
+      {en:"prizes", zh:"獎品"},
+      {en:"ribbon", zh:"緞帶"},
+      {en:"ring", zh:"戒指"},
+      {en:"rope", zh:"繩子"},
+      {en:"sign", zh:"標誌"},
+      {en:"tonight", zh:"今晚"},
+      {en:"happen", zh:"發生"},
+      {en:"miss", zh:"想念"},
+      {en:"nice", zh:"好的"},
+      {en:"steps", zh:"階梯"},
+      {en:"terrible", zh:"可怕的"}
+  ],
+  4: [
+      {en:"knee", zh:"膝蓋"},
+      {en:"kneel", zh:"跪下"},
+      {en:"knife", zh:"刀"},
+      {en:"knit", zh:"編織"},
+      {en:"knob", zh:"圓形把手"},
+      {en:"knock", zh:"敲"},
+      {en:"knot", zh:"結"},
+      {en:"wrap", zh:"包起來"},
+      {en:"wreath", zh:"花圈"},
+      {en:"wrench", zh:"扳手"},
+      {en:"wrist", zh:"手腕"},
+      {en:"write", zh:"寫"},
+      {en:"wrong", zh:"錯的"},
+      {en:"shy", zh:"害羞的"},
+      {en:"right", zh:"正確的 / 右邊"},
+      {en:"wide", zh:"寬的"},
+      {en:"light", zh:"光 / 輕的"},
+      {en:"pine", zh:"松樹"},
+      {en:"fight", zh:"打架"},
+      {en:"fly", zh:"飛"},
+      {en:"night", zh:"夜晚"},
+      {en:"dry", zh:"乾的"},
+      {en:"sight", zh:"視線"},
+      {en:"might", zh:"可能"},
+      {en:"tight", zh:"緊的"},
+      {en:"stripe", zh:"條紋"},
+      {en:"sly", zh:"狡猾的"},
+      {en:"cry", zh:"哭"},
+      {en:"basket", zh:"籃子"},
+      {en:"bend down", zh:"彎下"},
+      {en:"kind", zh:"親切的 / 種類"},
+      {en:"wave", zh:"揮手 / 波浪"},
+      {en:"enter", zh:"進入"},
+      {en:"never", zh:"從不"},
+      {en:"picture", zh:"圖片"},
+      {en:"proud", zh:"驕傲的"},
+      {en:"shiny", zh:"閃亮的"},
+      {en:"spray", zh:"噴灑"}
+  ],
+  5: [
+      {en:"brick", zh:"磚"},
+      {en:"check", zh:"檢查"},
+      {en:"chick", zh:"小雞"},
+      {en:"clock", zh:"時鐘"},
+      {en:"duck", zh:"鴨子"},
+      {en:"lock", zh:"鎖"},
+      {en:"pocket", zh:"口袋"},
+      {en:"rack", zh:"架子"},
+      {en:"rock", zh:"岩石"},
+      {en:"rocket", zh:"火箭"},
+      {en:"snack", zh:"點心"},
+      {en:"thick", zh:"厚的"},
+      {en:"track", zh:"軌道"},
+      {en:"poke", zh:"戳"},
+      {en:"boat", zh:"船"},
+      {en:"row", zh:"划船"},
+      {en:"goat", zh:"山羊"},
+      {en:"snow", zh:"雪"},
+      {en:"toad", zh:"蟾蜍"},
+      {en:"soap", zh:"肥皂"},
+      {en:"blow", zh:"吹"},
+      {en:"coat", zh:"外套"},
+      {en:"tow", zh:"拖拉"},
+      {en:"coach", zh:"教練"},
+      {en:"float", zh:"漂浮"},
+      {en:"toast", zh:"吐司"},
+      {en:"slow", zh:"慢的"},
+      {en:"globe", zh:"地球"},
+      {en:"at once", zh:"立刻"},
+      {en:"dog toys", zh:"狗玩具"},
+      {en:"guess", zh:"猜"},
+      {en:"inside", zh:"裡面"},
+      {en:"judge", zh:"評判"},
+      {en:"place", zh:"地方"}
+  ],
+  6: [
+      {en:"bright", zh:"明亮的"},
+      {en:"caught", zh:"抓到"},
+      {en:"eight", zh:"八"},
+      {en:"flight", zh:"飛行"},
+      {en:"high", zh:"高的"},
+      {en:"knight", zh:"騎士"},
+      {en:"light", zh:"光"},
+      {en:"night", zh:"夜晚"},
+      {en:"right", zh:"正確的"},
+      {en:"sign", zh:"標誌"},
+      {en:"sight", zh:"視力"},
+      {en:"straight", zh:"直的"},
+      {en:"tight", zh:"緊的"},
+      {en:"tune", zh:"曲子"},
+      {en:"moon", zh:"月亮"},
+      {en:"pool", zh:"游泳池"},
+      {en:"zoo", zh:"動物園"},
+      {en:"rude", zh:"粗魯的"},
+      {en:"soon", zh:"很快"},
+      {en:"boot", zh:"長靴"},
+      {en:"food", zh:"食物"},
+      {en:"tube", zh:"管子"},
+      {en:"room", zh:"房間"},
+      {en:"moose", zh:"麋鹿"},
+      {en:"goose", zh:"鵝"},
+      {en:"zoom", zh:"嗖地飛"},
+      {en:"balloon", zh:"氣球"},
+      {en:"shoot", zh:"射擊"},
+      {en:"a can of", zh:"一罐"},
+      {en:"enter", zh:"進入"},
+      {en:"first", zh:"第一"},
+      {en:"glitter", zh:"閃光"},
+      {en:"gold", zh:"金子"},
+      {en:"prizes", zh:"獎品"},
+      {en:"second", zh:"第二"},
+      {en:"sign up", zh:"報名"},
+      {en:"surely", zh:"當然"},
+      {en:"third", zh:"第三"},
+      {en:"look at", zh:"看著"},
+      {en:"no cost", zh:"免費"},
+      {en:"nod", zh:"點頭"},
+      {en:"paste", zh:"黏貼"},
+      {en:"permission", zh:"許可"}
+  ],
+  7: [
+      {en:"basement", zh:"地下室"},
+      {en:"bright-eyed", zh:"眼神明亮的"},
+      {en:"lean", zh:"傾斜"},
+      {en:"past", zh:"過去"},
+      {en:"wrong", zh:"錯的"},
+      {en:"remember", zh:"記得"},
+      {en:"clap", zh:"拍手"},
+      {en:"crowd", zh:"人群"},
+      {en:"hug", zh:"擁抱"},
+      {en:"nervous", zh:"緊張的"},
+      {en:"people", zh:"人們"},
+      {en:"ring", zh:"戒指 / 鈴聲"}
+  ],
+  8: [
+      {en:"different", zh:"不同的"},
+      {en:"hold up", zh:"舉起"},
+      {en:"lay down", zh:"躺下"},
+      {en:"other", zh:"其他的"},
+      {en:"racehorse", zh:"賽馬"},
+      {en:"win", zh:"贏"},
+      {en:"winner", zh:"勝利者"}
+  ],
+  9: [
+      {en:"what", zh:"什麼"},
+      {en:"clash", zh:"衝突"},
+      {en:"shock", zh:"震驚"},
+      {en:"while", zh:"當…時"},
+      {en:"shame", zh:"可惜"},
+      {en:"flash", zh:"閃光"},
+      {en:"where", zh:"哪裡"},
+      {en:"shine", zh:"發亮"},
+      {en:"why", zh:"為什麼"},
+      {en:"shore", zh:"海岸"},
+      {en:"shall", zh:"將要"},
+      {en:"share", zh:"分享"},
+      {en:"shadow", zh:"影子"},
+      {en:"whisper", zh:"低語"},
+      {en:"whiskers", zh:"鬍鬚"},
+      {en:"different", zh:"不同的"},
+      {en:"hold up", zh:"舉起"},
+      {en:"lay down", zh:"躺下"},
+      {en:"other", zh:"其他的"},
+      {en:"racehorse", zh:"賽馬"},
+      {en:"win", zh:"贏"},
+      {en:"winner", zh:"優勝者"},
+      {en:"braid", zh:"辮子"},
+      {en:"chain", zh:"鍊條"},
+      {en:"hay", zh:"乾草"},
+      {en:"mail", zh:"郵件"},
+      {en:"pail", zh:"水桶"},
+      {en:"paint", zh:"油漆"},
+      {en:"pay", zh:"付錢"},
+      {en:"rain", zh:"雨"},
+      {en:"sail", zh:"帆 / 航行"},
+      {en:"stain", zh:"汙漬"},
+      {en:"train", zh:"火車"},
+      {en:"tray", zh:"托盤"},
+      {en:"beads", zh:"珠子"},
+      {en:"bean", zh:"豆子"},
+      {en:"beef", zh:"牛肉"},
+      {en:"bread", zh:"麵包"},
+      {en:"head", zh:"頭"},
+      {en:"heel", zh:"腳跟"},
+      {en:"leaf", zh:"葉子"},
+      {en:"screen", zh:"螢幕"},
+      {en:"seat", zh:"座位"},
+      {en:"steam", zh:"蒸氣"},
+      {en:"thread", zh:"線"},
+      {en:"tree", zh:"樹"},
+      {en:"climb", zh:"爬"},
+      {en:"myself", zh:"我自己"},
+      {en:"practice", zh:"練習"},
+      {en:"track", zh:"軌道"},
+      {en:"uncle", zh:"叔叔"},
+      {en:"whiskers", zh:"鬍鬚"}
+  ],
+  10: [
+      {en:"braid", zh:"辮子"},
+      {en:"chain", zh:"鍊條"},
+      {en:"hay", zh:"乾草"},
+      {en:"nail", zh:"指甲 / 釘子"},
+      {en:"pail", zh:"水桶"},
+      {en:"paint", zh:"油漆"},
+      {en:"pay", zh:"付錢"},
+      {en:"rain", zh:"雨"},
+      {en:"sail", zh:"航行"},
+      {en:"stain", zh:"汙點"},
+      {en:"beads", zh:"珠子"},
+      {en:"bean", zh:"豆子"},
+      {en:"beef", zh:"牛肉"},
+      {en:"bead", zh:"珠子"},
+      {en:"head", zh:"頭"},
+      {en:"heel", zh:"腳跟"},
+      {en:"leaf", zh:"葉子"},
+      {en:"screen", zh:"螢幕"},
+      {en:"seat", zh:"座位"},
+      {en:"steam", zh:"蒸氣"},
+      {en:"thread", zh:"線"},
+      {en:"tree", zh:"樹"},
+      {en:"climb", zh:"爬"},
+      {en:"myself", zh:"我自己"},
+      {en:"practice", zh:"練習"},
+      {en:"track", zh:"軌道"},
+      {en:"uncle", zh:"叔叔"},
+      {en:"whiskers", zh:"鬍鬚"},
+      {en:"wrote", zh:"寫了"},
+      {en:"clover", zh:"酢漿草"},
+      {en:"danger", zh:"危險"},
+      {en:"field", zh:"田野"},
+      {en:"noise", zh:"噪音"},
+      {en:"pass", zh:"經過"},
+      {en:"rest", zh:"休息"},
+      {en:"rumble", zh:"隆隆聲"},
+      {en:"sky", zh:"天空"},
+      {en:"thunder", zh:"雷"}
+  ],
+  11: [
+      {en:"blow", zh:"吹"},
+      {en:"bowl", zh:"碗"},
+      {en:"crow", zh:"烏鴉"},
+      {en:"goat", zh:"山羊"},
+      {en:"pillow", zh:"枕頭"},
+      {en:"road", zh:"道路"},
+      {en:"snow", zh:"雪"},
+      {en:"soap", zh:"肥皂"},
+      {en:"throw", zh:"丟"},
+      {en:"toad", zh:"蟾蜍"},
+      {en:"toast", zh:"吐司"},
+      {en:"window", zh:"窗戶"},
+      {en:"bath", zh:"洗澡"},
+      {en:"peach", zh:"桃子"},
+      {en:"tooth", zh:"牙齒"},
+      {en:"thin", zh:"瘦的"},
+      {en:"choke", zh:"噎到"},
+      {en:"much", zh:"很多"},
+      {en:"with", zh:"和"},
+      {en:"chick", zh:"小雞"},
+      {en:"teach", zh:"教"},
+      {en:"thank", zh:"感謝"},
+      {en:"child", zh:"小孩"},
+      {en:"chore", zh:"家事"},
+      {en:"reach", zh:"到達"},
+      {en:"thick", zh:"厚的"},
+      {en:"think", zh:"思考"},
+      {en:"carrot", zh:"胡蘿蔔"},
+      {en:"cool", zh:"涼的"},
+      {en:"gloves", zh:"手套"},
+      {en:"haircut", zh:"理髮"},
+      {en:"patch", zh:"補丁"},
+      {en:"pond", zh:"池塘"},
+      {en:"spring", zh:"春天"},
+      {en:"voice", zh:"聲音"},
+      {en:"wool", zh:"羊毛"},
+      {en:"acorn", zh:"橡子"},
+      {en:"angry", zh:"生氣的"},
+      {en:"as fast as", zh:"盡可能快"},
+      {en:"bless", zh:"祝福"},
+      {en:"chattering", zh:"喋喋不休"},
+      {en:"dig", zh:"挖"},
+      {en:"hill", zh:"小山"},
+      {en:"oak", zh:"橡樹"},
+      {en:"squirrel", zh:"松鼠"},
+      {en:"thief", zh:"小偷"},
+      {en:"tiny", zh:"很小的"}
+  ],
+  12: [
+      {en:"boot", zh:"長靴"},
+      {en:"cook", zh:"煮"},
+      {en:"hood", zh:"帽兜"},
+      {en:"hook", zh:"鉤子"},
+      {en:"hoop", zh:"圈"},
+      {en:"moose", zh:"麋鹿"},
+      {en:"pool", zh:"游泳池"},
+      {en:"school", zh:"學校"},
+      {en:"shook", zh:"搖動（過去式）"},
+      {en:"spoon", zh:"湯匙"},
+      {en:"stood", zh:"站立（過去式）"},
+      {en:"stool", zh:"凳子"},
+      {en:"cause", zh:"原因"},
+      {en:"claw", zh:"爪"},
+      {en:"crawl", zh:"爬行"},
+      {en:"draw", zh:"畫"},
+      {en:"faucet", zh:"水龍頭"},
+      {en:"fawn", zh:"小鹿"},
+      {en:"laundry", zh:"洗衣"},
+      {en:"paw", zh:"爪子"},
+      {en:"sauce", zh:"醬汁"},
+      {en:"shawl", zh:"披巾"},
+      {en:"straw", zh:"吸管 / 稻草"},
+      {en:"yawn", zh:"打哈欠"},
+      {en:"behind", zh:"在後面"},
+      {en:"berry", zh:"漿果"},
+      {en:"branches", zh:"樹枝"},
+      {en:"bushy tail", zh:"毛茸茸的尾巴"},
+      {en:"dance", zh:"跳舞"},
+      {en:"flag", zh:"旗子"},
+      {en:"insect", zh:"昆蟲"},
+      {en:"quick", zh:"快的"},
+      {en:"skunk", zh:"臭鼬"},
+      {en:"suddenly", zh:"突然地"}
+  ],
+  13: [
+      {en:"blew", zh:"吹了"},
+      {en:"chew", zh:"咀嚼"},
+      {en:"dew", zh:"露水"},
+      {en:"few", zh:"少數"},
+      {en:"flew", zh:"飛了"},
+      {en:"grew", zh:"成長"},
+      {en:"jewelry", zh:"珠寶"},
+      {en:"mew", zh:"貓叫"},
+      {en:"new", zh:"新的"},
+      {en:"screw", zh:"螺絲"},
+      {en:"stew", zh:"燉菜"},
+      {en:"threw", zh:"丟了"},
+      {en:"art", zh:"藝術"},
+      {en:"yard", zh:"院子"},
+      {en:"barn", zh:"穀倉"},
+      {en:"park", zh:"公園"},
+      {en:"hard", zh:"困難的"},
+      {en:"cart", zh:"手推車"},
+      {en:"dark", zh:"黑暗"},
+      {en:"farm", zh:"農場"},
+      {en:"shark", zh:"鯊魚"},
+      {en:"sharp", zh:"銳利的"},
+      {en:"harm", zh:"傷害"},
+      {en:"alarm", zh:"鬧鐘"},
+      {en:"arms", zh:"手臂"},
+      {en:"march", zh:"三月 / 行進"},
+      {en:"smart", zh:"聰明的"},
+      {en:"buzzing", zh:"嗡嗡聲"},
+      {en:"careful", zh:"小心的"},
+      {en:"fur", zh:"毛"},
+      {en:"hit", zh:"打"},
+      {en:"hole", zh:"洞"},
+      {en:"honey", zh:"蜂蜜"},
+      {en:"lick", zh:"舔"},
+      {en:"path", zh:"小路"},
+      {en:"sting", zh:"螫"},
+      {en:"stuck", zh:"卡住的"},
+      {en:"against", zh:"反對"},
+      {en:"hardly", zh:"幾乎不"},
+      {en:"meadow", zh:"草地"},
+      {en:"middle", zh:"中間"},
+      {en:"pit-pat", zh:"噠噠聲"},
+      {en:"space", zh:"空間"},
+      {en:"toss", zh:"丟"},
+      {en:"touch", zh:"觸碰"},
+      {en:"whistle", zh:"口哨"}
+  ],
+  14: [
+      
+  ],
+  15: [
+      {en:"baby", zh:"嬰兒"},
+      {en:"bunny", zh:"小兔子"},
+      {en:"city", zh:"城市"},
+      {en:"cry", zh:"哭"},
+      {en:"dry", zh:"乾的"},
+      {en:"fly", zh:"飛"},
+      {en:"fry", zh:"炸"},
+      {en:"happy", zh:"快樂的"},
+      {en:"party", zh:"派對"},
+      {en:"pony", zh:"小馬"},
+      {en:"silly", zh:"傻的"},
+      {en:"sky", zh:"天空"},
+      {en:"story", zh:"故事"},
+      {en:"chain", zh:"鏈子"},
+      {en:"chop", zh:"切"},
+      {en:"shed", zh:"棚子"},
+      {en:"shelf", zh:"架子"},
+      {en:"thick", zh:"厚的"},
+      {en:"thin", zh:"瘦的"},
+      {en:"think", zh:"思考"},
+      {en:"thread", zh:"線"},
+      {en:"three", zh:"三"},
+      {en:"throat", zh:"喉嚨"},
+      {en:"whale", zh:"鯨魚"},
+      {en:"wheel", zh:"輪子"},
+      {en:"shines", zh:"發光"},
+      {en:"through", zh:"穿過"},
+      {en:"bouncing", zh:"彈跳的"},
+      {en:"spider", zh:"蜘蛛"},
+      {en:"webs", zh:"網"},
+      {en:"woods", zh:"樹林"},
+      {en:"glass", zh:"玻璃"},
+      {en:"tied together", zh:"綁在一起"},
+      {en:"drop", zh:"掉下"},
+      {en:"straight", zh:"直的"},
+      {en:"friendly", zh:"友善的"},
+      {en:"bless", zh:"祝福"},
+      {en:"blink", zh:"眨眼"},
+      {en:"crawl", zh:"爬"},
+      {en:"flat", zh:"平的"},
+      {en:"follow", zh:"跟隨"},
+      {en:"join", zh:"加入"},
+      {en:"rock", zh:"岩石"},
+      {en:"star", zh:"星星"},
+      {en:"swish", zh:"唰地一聲"}
+  ],
+  16: [
+      {en:"bath", zh:"洗澡"},
+      {en:"bench", zh:"長凳"},
+      {en:"branch", zh:"樹枝"},
+      {en:"brush", zh:"刷子"},
+      {en:"dish", zh:"盤子"},
+      {en:"ditch", zh:"溝渠"},
+      {en:"path", zh:"小徑"},
+      {en:"ring", zh:"戒指"},
+      {en:"swing", zh:"盪鞦韆"},
+      {en:"switch", zh:"開關"},
+      {en:"teeth", zh:"牙齒"},
+      {en:"watch", zh:"手錶"},
+      {en:"bird", zh:"鳥"},
+      {en:"more", zh:"更多"},
+      {en:"shirt", zh:"襯衫"},
+      {en:"horse", zh:"馬"},
+      {en:"first", zh:"第一"},
+      {en:"for", zh:"為了"},
+      {en:"girl", zh:"女孩"},
+      {en:"horn", zh:"角"},
+      {en:"dirt", zh:"泥土"},
+      {en:"short", zh:"短的"},
+      {en:"store", zh:"商店"},
+      {en:"morning", zh:"早晨"},
+      {en:"dinosaur", zh:"恐龍"},
+      {en:"third", zh:"第三"},
+      {en:"whirl", zh:"旋轉"},
+      {en:"appear", zh:"出現"},
+      {en:"decide", zh:"決定"},
+      {en:"furry", zh:"毛茸茸的"},
+      {en:"sister", zh:"姐妹"},
+      {en:"strange", zh:"奇怪的"},
+      {en:"tease", zh:"取笑"}
+  ],
+  17: [
+      {en:"barn", zh:"穀倉"},
+      {en:"card", zh:"卡片"},
+      {en:"dart", zh:"飛鏢"},
+      {en:"fern", zh:"蕨類"},
+      {en:"harp", zh:"豎琴"},
+      {en:"ladder", zh:"梯子"},
+      {en:"letter", zh:"信"},
+      {en:"number", zh:"數字"},
+      {en:"paper", zh:"紙"},
+      {en:"shark", zh:"鯊魚"},
+      {en:"slipper", zh:"拖鞋"},
+      {en:"water", zh:"水"},
+      {en:"yard", zh:"院子"},
+      {en:"flutter", zh:"拍動"},
+      {en:"flyer", zh:"傳單"},
+      {en:"minute", zh:"分鐘"},
+      {en:"nearby", zh:"附近"},
+      {en:"reach", zh:"到達"},
+      {en:"seem", zh:"似乎"},
+      {en:"throat", zh:"喉嚨"},
+      {en:"hummingbird", zh:"蜂鳥"},
+      {en:"afraid", zh:"害怕"},
+      {en:"exclaimed", zh:"驚呼"},
+      {en:"frightened", zh:"害怕的"},
+      {en:"lift", zh:"抬起"},
+      {en:"shut", zh:"關上"},
+      {en:"stretch", zh:"伸展"},
+      {en:"wide", zh:"寬的"}
+  ],
+  18: [
+      {en:"cork", zh:"軟木塞"},
+      {en:"corn", zh:"玉米"},
+      {en:"dirt", zh:"泥土"},
+      {en:"fork", zh:"叉子"},
+      {en:"horn", zh:"角"},
+      {en:"shirt", zh:"襯衫"},
+      {en:"short", zh:"短的"},
+      {en:"skirt", zh:"裙子"},
+      {en:"squirt", zh:"噴出"},
+      {en:"stir", zh:"攪拌"},
+      {en:"storm", zh:"暴風雨"},
+      {en:"third", zh:"第三"},
+      {en:"thorn", zh:"荊棘"},
+      {en:"burn", zh:"燒"},
+      {en:"curb", zh:"路邊"},
+      {en:"curl", zh:"捲曲"},
+      {en:"fur", zh:"毛"},
+      {en:"hurt", zh:"受傷"},
+      {en:"turn", zh:"轉彎"},
+      {en:"does", zh:"做（第三人稱）"},
+      {en:"were", zh:"是（過去式）"},
+      {en:"every", zh:"每個"},
+      {en:"very", zh:"非常"},
+      {en:"give", zh:"給"},
+      {en:"live", zh:"生活"},
+      {en:"thing", zh:"東西"},
+      {en:"your", zh:"你的"},
+      {en:"many", zh:"許多"},
+      {en:"who", zh:"誰"},
+      {en:"any", zh:"任何"},
+      {en:"away", zh:"離開"},
+      {en:"goes", zh:"去（第三人稱）"},
+      {en:"find", zh:"找到"},
+      {en:"kind", zh:"種類 / 好的"},
+      {en:"ago", zh:"以前"},
+      {en:"another", zh:"另一個"},
+      {en:"corner", zh:"角落"},
+      {en:"everywhere", zh:"到處"},
+      {en:"fold", zh:"摺"},
+      {en:"important", zh:"重要的"},
+      {en:"mouse", zh:"老鼠"},
+      {en:"neck", zh:"脖子"},
+      {en:"owl", zh:"貓頭鷹"},
+      {en:"sharp", zh:"銳利的"},
+      {en:"size", zh:"尺寸"},
+      {en:"supper", zh:"晚餐"},
+      {en:"argue", zh:"爭吵"},
+      {en:"bright", zh:"明亮的"},
+      {en:"button", zh:"鈕扣"},
+      {en:"chuckle", zh:"輕笑"},
+      {en:"ladybug", zh:"瓢蟲"},
+      {en:"prettiest", zh:"最漂亮的"},
+      {en:"shout", zh:"叫喊"},
+      {en:"spots", zh:"斑點"},
+      {en:"whole", zh:"整個的"}
+  ],
+  19: []
+}{
+  1: [
+      {en:"bank", zh:"銀行"},
+      {en:"camp", zh:"露營"},
+      {en:"hand", zh:"手"},
+      {en:"paint", zh:"油漆"},
+      {en:"plant", zh:"植物"},
+      {en:"pond", zh:"池塘"},
+      {en:"pump", zh:"幫浦"},
+      {en:"stamp", zh:"郵票"},
+      {en:"stand", zh:"站立"},
+      {en:"stump", zh:"樹樁"},
+      {en:"wind", zh:"風"},
+      {en:"wink", zh:"眨眼"},
+      {en:"hungry", zh:"飢餓的"},
+      {en:"lapping", zh:"舔、拍打（水）"},
+      {en:"milk", zh:"牛奶"},
+      {en:"quiet", zh:"安靜的"},
+      {en:"television", zh:"電視"},
+      {en:"backyard", zh:"後院"},
+      {en:"basement", zh:"地下室"},
+      {en:"clean", zh:"打掃"},
+      {en:"fly up", zh:"飛起來"},
+      {en:"keep-away", zh:"躲避遊戲"},
+      {en:"near", zh:"近的"},
+      {en:"paint", zh:"油漆"},
+      {en:"upstairs", zh:"楼上"}
+  ],
+  2: [
+      {en:"belt", zh:"皮帶"},
+      {en:"elf", zh:"小精靈"},
+      {en:"gift", zh:"禮物"},
+      {en:"golf", zh:"高爾夫"},
+      {en:"left", zh:"左邊"},
+      {en:"lift", zh:"提起"},
+      {en:"melt", zh:"融化"},
+      {en:"quilt", zh:"棉被"},
+      {en:"raft", zh:"木筏"},
+      {en:"shelf", zh:"架子"},
+      {en:"wilt", zh:"枯萎"},
+      {en:"wolf", zh:"狼"},
+      {en:"came", zh:"來了"},
+      {en:"bait", zh:"餌"},
+      {en:"rake", zh:"耙子"},
+      {en:"hay", zh:"乾草"},
+      {en:"plate", zh:"盤子"},
+      {en:"pail", zh:"水桶"},
+      {en:"cane", zh:"拐杖"},
+      {en:"raise", zh:"舉起"},
+      {en:"grape", zh:"葡萄"},
+      {en:"say", zh:"說"},
+      {en:"aid", zh:"幫助"},
+      {en:"pain", zh:"疼痛"},
+      {en:"trail", zh:"小徑"},
+      {en:"stain", zh:"汙漬"},
+      {en:"blaze", zh:"火焰"},
+      {en:"almost", zh:"幾乎"},
+      {en:"dishes", zh:"盤子"},
+      {en:"everyone", zh:"每個人"},
+      {en:"family", zh:"家人"},
+      {en:"later", zh:"之後"},
+      {en:"soup", zh:"湯"},
+      {en:"still", zh:"仍然"},
+      {en:"together", zh:"一起"},
+      {en:"window", zh:"窗戶"},
+      {en:"children", zh:"孩子們"},
+      {en:"collar", zh:"領子"},
+      {en:"heel", zh:"腳跟"},
+      {en:"hurt", zh:"受傷"},
+      {en:"in front of", zh:"在…前面"},
+      {en:"lean", zh:"傾斜"},
+      {en:"pet store", zh:"寵物店"},
+      {en:"snort", zh:"噴鼻息"}
+  ],
+  3: [
+      {en:"scrape", zh:"刮"},
+      {en:"scratch", zh:"抓"},
+      {en:"screen", zh:"螢幕"},
+      {en:"scrub", zh:"用力擦"},
+      {en:"splash", zh:"濺起"},
+      {en:"split", zh:"分開"},
+      {en:"sprain", zh:"扭傷"},
+      {en:"spray", zh:"噴灑"},
+      {en:"spring", zh:"春天 / 彈簧"},
+      {en:"strap", zh:"皮帶"},
+      {en:"stripes", zh:"條紋"},
+      {en:"strong", zh:"強壯的"},
+      {en:"deep", zh:"深的"},
+      {en:"meal", zh:"一餐"},
+      {en:"sheep", zh:"羊"},
+      {en:"each", zh:"每一個"},
+      {en:"wheel", zh:"輪子"},
+      {en:"treat", zh:"招待"},
+      {en:"bean", zh:"豆子"},
+      {en:"seen", zh:"看見（過去分詞）"},
+      {en:"team", zh:"團隊"},
+      {en:"dream", zh:"夢"},
+      {en:"mean", zh:"意思是"},
+      {en:"leave", zh:"離開"},
+      {en:"cream", zh:"奶油"},
+      {en:"sleep", zh:"睡覺"},
+      {en:"sneeze", zh:"打噴嚏"},
+      {en:"copies", zh:"副本"},
+      {en:"enough", zh:"足夠"},
+      {en:"library", zh:"圖書館"},
+      {en:"number", zh:"數字"},
+      {en:"prizes", zh:"獎品"},
+      {en:"ribbon", zh:"緞帶"},
+      {en:"ring", zh:"戒指"},
+      {en:"rope", zh:"繩子"},
+      {en:"sign", zh:"標誌"},
+      {en:"tonight", zh:"今晚"},
+      {en:"happen", zh:"發生"},
+      {en:"miss", zh:"想念"},
+      {en:"nice", zh:"好的"},
+      {en:"steps", zh:"階梯"},
+      {en:"terrible", zh:"可怕的"}
+  ],
+  4: [
+      {en:"knee", zh:"膝蓋"},
+      {en:"kneel", zh:"跪下"},
+      {en:"knife", zh:"刀"},
+      {en:"knit", zh:"編織"},
+      {en:"knob", zh:"圓形把手"},
+      {en:"knock", zh:"敲"},
+      {en:"knot", zh:"結"},
+      {en:"wrap", zh:"包起來"},
+      {en:"wreath", zh:"花圈"},
+      {en:"wrench", zh:"扳手"},
+      {en:"wrist", zh:"手腕"},
+      {en:"write", zh:"寫"},
+      {en:"wrong", zh:"錯的"},
+      {en:"shy", zh:"害羞的"},
+      {en:"right", zh:"正確的 / 右邊"},
+      {en:"wide", zh:"寬的"},
+      {en:"light", zh:"光 / 輕的"},
+      {en:"pine", zh:"松樹"},
+      {en:"fight", zh:"打架"},
+      {en:"fly", zh:"飛"},
+      {en:"night", zh:"夜晚"},
+      {en:"dry", zh:"乾的"},
+      {en:"sight", zh:"視線"},
+      {en:"might", zh:"可能"},
+      {en:"tight", zh:"緊的"},
+      {en:"stripe", zh:"條紋"},
+      {en:"sly", zh:"狡猾的"},
+      {en:"cry", zh:"哭"},
+      {en:"basket", zh:"籃子"},
+      {en:"bend down", zh:"彎下"},
+      {en:"kind", zh:"親切的 / 種類"},
+      {en:"wave", zh:"揮手 / 波浪"},
+      {en:"enter", zh:"進入"},
+      {en:"never", zh:"從不"},
+      {en:"picture", zh:"圖片"},
+      {en:"proud", zh:"驕傲的"},
+      {en:"shiny", zh:"閃亮的"},
+      {en:"spray", zh:"噴灑"}
+  ],
+  5: [
+      {en:"brick", zh:"磚"},
+      {en:"check", zh:"檢查"},
+      {en:"chick", zh:"小雞"},
+      {en:"clock", zh:"時鐘"},
+      {en:"duck", zh:"鴨子"},
+      {en:"lock", zh:"鎖"},
+      {en:"pocket", zh:"口袋"},
+      {en:"rack", zh:"架子"},
+      {en:"rock", zh:"岩石"},
+      {en:"rocket", zh:"火箭"},
+      {en:"snack", zh:"點心"},
+      {en:"thick", zh:"厚的"},
+      {en:"track", zh:"軌道"},
+      {en:"poke", zh:"戳"},
+      {en:"boat", zh:"船"},
+      {en:"row", zh:"划船"},
+      {en:"goat", zh:"山羊"},
+      {en:"snow", zh:"雪"},
+      {en:"toad", zh:"蟾蜍"},
+      {en:"soap", zh:"肥皂"},
+      {en:"blow", zh:"吹"},
+      {en:"coat", zh:"外套"},
+      {en:"tow", zh:"拖拉"},
+      {en:"coach", zh:"教練"},
+      {en:"float", zh:"漂浮"},
+      {en:"toast", zh:"吐司"},
+      {en:"slow", zh:"慢的"},
+      {en:"globe", zh:"地球"},
+      {en:"at once", zh:"立刻"},
+      {en:"dog toys", zh:"狗玩具"},
+      {en:"guess", zh:"猜"},
+      {en:"inside", zh:"裡面"},
+      {en:"judge", zh:"評判"},
+      {en:"place", zh:"地方"}
+  ],
+  6: [
+      {en:"bright", zh:"明亮的"},
+      {en:"caught", zh:"抓到"},
+      {en:"eight", zh:"八"},
+      {en:"flight", zh:"飛行"},
+      {en:"high", zh:"高的"},
+      {en:"knight", zh:"騎士"},
+      {en:"light", zh:"光"},
+      {en:"night", zh:"夜晚"},
+      {en:"right", zh:"正確的"},
+      {en:"sign", zh:"標誌"},
+      {en:"sight", zh:"視力"},
+      {en:"straight", zh:"直的"},
+      {en:"tight", zh:"緊的"},
+      {en:"tune", zh:"曲子"},
+      {en:"moon", zh:"月亮"},
+      {en:"pool", zh:"游泳池"},
+      {en:"zoo", zh:"動物園"},
+      {en:"rude", zh:"粗魯的"},
+      {en:"soon", zh:"很快"},
+      {en:"boot", zh:"長靴"},
+      {en:"food", zh:"食物"},
+      {en:"tube", zh:"管子"},
+      {en:"room", zh:"房間"},
+      {en:"moose", zh:"麋鹿"},
+      {en:"goose", zh:"鵝"},
+      {en:"zoom", zh:"嗖地飛"},
+      {en:"balloon", zh:"氣球"},
+      {en:"shoot", zh:"射擊"},
+      {en:"a can of", zh:"一罐"},
+      {en:"enter", zh:"進入"},
+      {en:"first", zh:"第一"},
+      {en:"glitter", zh:"閃光"},
+      {en:"gold", zh:"金子"},
+      {en:"prizes", zh:"獎品"},
+      {en:"second", zh:"第二"},
+      {en:"sign up", zh:"報名"},
+      {en:"surely", zh:"當然"},
+      {en:"third", zh:"第三"},
+      {en:"look at", zh:"看著"},
+      {en:"no cost", zh:"免費"},
+      {en:"nod", zh:"點頭"},
+      {en:"paste", zh:"黏貼"},
+      {en:"permission", zh:"許可"}
+  ],
+  7: [
+      {en:"basement", zh:"地下室"},
+      {en:"bright-eyed", zh:"眼神明亮的"},
+      {en:"lean", zh:"傾斜"},
+      {en:"past", zh:"過去"},
+      {en:"wrong", zh:"錯的"},
+      {en:"remember", zh:"記得"},
+      {en:"clap", zh:"拍手"},
+      {en:"crowd", zh:"人群"},
+      {en:"hug", zh:"擁抱"},
+      {en:"nervous", zh:"緊張的"},
+      {en:"people", zh:"人們"},
+      {en:"ring", zh:"戒指 / 鈴聲"}
+  ],
+  8: [
+      {en:"different", zh:"不同的"},
+      {en:"hold up", zh:"舉起"},
+      {en:"lay down", zh:"躺下"},
+      {en:"other", zh:"其他的"},
+      {en:"racehorse", zh:"賽馬"},
+      {en:"win", zh:"贏"},
+      {en:"winner", zh:"勝利者"}
+  ],
+  9: [
+      {en:"what", zh:"什麼"},
+      {en:"clash", zh:"衝突"},
+      {en:"shock", zh:"震驚"},
+      {en:"while", zh:"當…時"},
+      {en:"shame", zh:"可惜"},
+      {en:"flash", zh:"閃光"},
+      {en:"where", zh:"哪裡"},
+      {en:"shine", zh:"發亮"},
+      {en:"why", zh:"為什麼"},
+      {en:"shore", zh:"海岸"},
+      {en:"shall", zh:"將要"},
+      {en:"share", zh:"分享"},
+      {en:"shadow", zh:"影子"},
+      {en:"whisper", zh:"低語"},
+      {en:"whiskers", zh:"鬍鬚"},
+      {en:"different", zh:"不同的"},
+      {en:"hold up", zh:"舉起"},
+      {en:"lay down", zh:"躺下"},
+      {en:"other", zh:"其他的"},
+      {en:"racehorse", zh:"賽馬"},
+      {en:"win", zh:"贏"},
+      {en:"winner", zh:"優勝者"},
+      {en:"braid", zh:"辮子"},
+      {en:"chain", zh:"鍊條"},
+      {en:"hay", zh:"乾草"},
+      {en:"mail", zh:"郵件"},
+      {en:"pail", zh:"水桶"},
+      {en:"paint", zh:"油漆"},
+      {en:"pay", zh:"付錢"},
+      {en:"rain", zh:"雨"},
+      {en:"sail", zh:"帆 / 航行"},
+      {en:"stain", zh:"汙漬"},
+      {en:"train", zh:"火車"},
+      {en:"tray", zh:"托盤"},
+      {en:"beads", zh:"珠子"},
+      {en:"bean", zh:"豆子"},
+      {en:"beef", zh:"牛肉"},
+      {en:"bread", zh:"麵包"},
+      {en:"head", zh:"頭"},
+      {en:"heel", zh:"腳跟"},
+      {en:"leaf", zh:"葉子"},
+      {en:"screen", zh:"螢幕"},
+      {en:"seat", zh:"座位"},
+      {en:"steam", zh:"蒸氣"},
+      {en:"thread", zh:"線"},
+      {en:"tree", zh:"樹"},
+      {en:"climb", zh:"爬"},
+      {en:"myself", zh:"我自己"},
+      {en:"practice", zh:"練習"},
+      {en:"track", zh:"軌道"},
+      {en:"uncle", zh:"叔叔"},
+      {en:"whiskers", zh:"鬍鬚"}
+  ],
+  10: [
+      {en:"braid", zh:"辮子"},
+      {en:"chain", zh:"鍊條"},
+      {en:"hay", zh:"乾草"},
+      {en:"nail", zh:"指甲 / 釘子"},
+      {en:"pail", zh:"水桶"},
+      {en:"paint", zh:"油漆"},
+      {en:"pay", zh:"付錢"},
+      {en:"rain", zh:"雨"},
+      {en:"sail", zh:"航行"},
+      {en:"stain", zh:"汙點"},
+      {en:"beads", zh:"珠子"},
+      {en:"bean", zh:"豆子"},
+      {en:"beef", zh:"牛肉"},
+      {en:"bead", zh:"珠子"},
+      {en:"head", zh:"頭"},
+      {en:"heel", zh:"腳跟"},
+      {en:"leaf", zh:"葉子"},
+      {en:"screen", zh:"螢幕"},
+      {en:"seat", zh:"座位"},
+      {en:"steam", zh:"蒸氣"},
+      {en:"thread", zh:"線"},
+      {en:"tree", zh:"樹"},
+      {en:"climb", zh:"爬"},
+      {en:"myself", zh:"我自己"},
+      {en:"practice", zh:"練習"},
+      {en:"track", zh:"軌道"},
+      {en:"uncle", zh:"叔叔"},
+      {en:"whiskers", zh:"鬍鬚"},
+      {en:"wrote", zh:"寫了"},
+      {en:"clover", zh:"酢漿草"},
+      {en:"danger", zh:"危險"},
+      {en:"field", zh:"田野"},
+      {en:"noise", zh:"噪音"},
+      {en:"pass", zh:"經過"},
+      {en:"rest", zh:"休息"},
+      {en:"rumble", zh:"隆隆聲"},
+      {en:"sky", zh:"天空"},
+      {en:"thunder", zh:"雷"}
+  ],
+  11: [
+      {en:"blow", zh:"吹"},
+      {en:"bowl", zh:"碗"},
+      {en:"crow", zh:"烏鴉"},
+      {en:"goat", zh:"山羊"},
+      {en:"pillow", zh:"枕頭"},
+      {en:"road", zh:"道路"},
+      {en:"snow", zh:"雪"},
+      {en:"soap", zh:"肥皂"},
+      {en:"throw", zh:"丟"},
+      {en:"toad", zh:"蟾蜍"},
+      {en:"toast", zh:"吐司"},
+      {en:"window", zh:"窗戶"},
+      {en:"bath", zh:"洗澡"},
+      {en:"peach", zh:"桃子"},
+      {en:"tooth", zh:"牙齒"},
+      {en:"thin", zh:"瘦的"},
+      {en:"choke", zh:"噎到"},
+      {en:"much", zh:"很多"},
+      {en:"with", zh:"和"},
+      {en:"chick", zh:"小雞"},
+      {en:"teach", zh:"教"},
+      {en:"thank", zh:"感謝"},
+      {en:"child", zh:"小孩"},
+      {en:"chore", zh:"家事"},
+      {en:"reach", zh:"到達"},
+      {en:"thick", zh:"厚的"},
+      {en:"think", zh:"思考"},
+      {en:"carrot", zh:"胡蘿蔔"},
+      {en:"cool", zh:"涼的"},
+      {en:"gloves", zh:"手套"},
+      {en:"haircut", zh:"理髮"},
+      {en:"patch", zh:"補丁"},
+      {en:"pond", zh:"池塘"},
+      {en:"spring", zh:"春天"},
+      {en:"voice", zh:"聲音"},
+      {en:"wool", zh:"羊毛"},
+      {en:"acorn", zh:"橡子"},
+      {en:"angry", zh:"生氣的"},
+      {en:"as fast as", zh:"盡可能快"},
+      {en:"bless", zh:"祝福"},
+      {en:"chattering", zh:"喋喋不休"},
+      {en:"dig", zh:"挖"},
+      {en:"hill", zh:"小山"},
+      {en:"oak", zh:"橡樹"},
+      {en:"squirrel", zh:"松鼠"},
+      {en:"thief", zh:"小偷"},
+      {en:"tiny", zh:"很小的"}
+  ],
+  12: [
+      {en:"boot", zh:"長靴"},
+      {en:"cook", zh:"煮"},
+      {en:"hood", zh:"帽兜"},
+      {en:"hook", zh:"鉤子"},
+      {en:"hoop", zh:"圈"},
+      {en:"moose", zh:"麋鹿"},
+      {en:"pool", zh:"游泳池"},
+      {en:"school", zh:"學校"},
+      {en:"shook", zh:"搖動（過去式）"},
+      {en:"spoon", zh:"湯匙"},
+      {en:"stood", zh:"站立（過去式）"},
+      {en:"stool", zh:"凳子"},
+      {en:"cause", zh:"原因"},
+      {en:"claw", zh:"爪"},
+      {en:"crawl", zh:"爬行"},
+      {en:"draw", zh:"畫"},
+      {en:"faucet", zh:"水龍頭"},
+      {en:"fawn", zh:"小鹿"},
+      {en:"laundry", zh:"洗衣"},
+      {en:"paw", zh:"爪子"},
+      {en:"sauce", zh:"醬汁"},
+      {en:"shawl", zh:"披巾"},
+      {en:"straw", zh:"吸管 / 稻草"},
+      {en:"yawn", zh:"打哈欠"},
+      {en:"behind", zh:"在後面"},
+      {en:"berry", zh:"漿果"},
+      {en:"branches", zh:"樹枝"},
+      {en:"bushy tail", zh:"毛茸茸的尾巴"},
+      {en:"dance", zh:"跳舞"},
+      {en:"flag", zh:"旗子"},
+      {en:"insect", zh:"昆蟲"},
+      {en:"quick", zh:"快的"},
+      {en:"skunk", zh:"臭鼬"},
+      {en:"suddenly", zh:"突然地"}
+  ],
+  13: [
+      {en:"blew", zh:"吹了"},
+      {en:"chew", zh:"咀嚼"},
+      {en:"dew", zh:"露水"},
+      {en:"few", zh:"少數"},
+      {en:"flew", zh:"飛了"},
+      {en:"grew", zh:"成長"},
+      {en:"jewelry", zh:"珠寶"},
+      {en:"mew", zh:"貓叫"},
+      {en:"new", zh:"新的"},
+      {en:"screw", zh:"螺絲"},
+      {en:"stew", zh:"燉菜"},
+      {en:"threw", zh:"丟了"},
+      {en:"art", zh:"藝術"},
+      {en:"yard", zh:"院子"},
+      {en:"barn", zh:"穀倉"},
+      {en:"park", zh:"公園"},
+      {en:"hard", zh:"困難的"},
+      {en:"cart", zh:"手推車"},
+      {en:"dark", zh:"黑暗"},
+      {en:"farm", zh:"農場"},
+      {en:"shark", zh:"鯊魚"},
+      {en:"sharp", zh:"銳利的"},
+      {en:"harm", zh:"傷害"},
+      {en:"alarm", zh:"鬧鐘"},
+      {en:"arms", zh:"手臂"},
+      {en:"march", zh:"三月 / 行進"},
+      {en:"smart", zh:"聰明的"},
+      {en:"buzzing", zh:"嗡嗡聲"},
+      {en:"careful", zh:"小心的"},
+      {en:"fur", zh:"毛"},
+      {en:"hit", zh:"打"},
+      {en:"hole", zh:"洞"},
+      {en:"honey", zh:"蜂蜜"},
+      {en:"lick", zh:"舔"},
+      {en:"path", zh:"小路"},
+      {en:"sting", zh:"螫"},
+      {en:"stuck", zh:"卡住的"},
+      {en:"against", zh:"反對"},
+      {en:"hardly", zh:"幾乎不"},
+      {en:"meadow", zh:"草地"},
+      {en:"middle", zh:"中間"},
+      {en:"pit-pat", zh:"噠噠聲"},
+      {en:"space", zh:"空間"},
+      {en:"toss", zh:"丟"},
+      {en:"touch", zh:"觸碰"},
+      {en:"whistle", zh:"口哨"}
+  ],
+  14: [
+      
+  ],
+  15: [
+      {en:"baby", zh:"嬰兒"},
+      {en:"bunny", zh:"小兔子"},
+      {en:"city", zh:"城市"},
+      {en:"cry", zh:"哭"},
+      {en:"dry", zh:"乾的"},
+      {en:"fly", zh:"飛"},
+      {en:"fry", zh:"炸"},
+      {en:"happy", zh:"快樂的"},
+      {en:"party", zh:"派對"},
+      {en:"pony", zh:"小馬"},
+      {en:"silly", zh:"傻的"},
+      {en:"sky", zh:"天空"},
+      {en:"story", zh:"故事"},
+      {en:"chain", zh:"鏈子"},
+      {en:"chop", zh:"切"},
+      {en:"shed", zh:"棚子"},
+      {en:"shelf", zh:"架子"},
+      {en:"thick", zh:"厚的"},
+      {en:"thin", zh:"瘦的"},
+      {en:"think", zh:"思考"},
+      {en:"thread", zh:"線"},
+      {en:"three", zh:"三"},
+      {en:"throat", zh:"喉嚨"},
+      {en:"whale", zh:"鯨魚"},
+      {en:"wheel", zh:"輪子"},
+      {en:"shines", zh:"發光"},
+      {en:"through", zh:"穿過"},
+      {en:"bouncing", zh:"彈跳的"},
+      {en:"spider", zh:"蜘蛛"},
+      {en:"webs", zh:"網"},
+      {en:"woods", zh:"樹林"},
+      {en:"glass", zh:"玻璃"},
+      {en:"tied together", zh:"綁在一起"},
+      {en:"drop", zh:"掉下"},
+      {en:"straight", zh:"直的"},
+      {en:"friendly", zh:"友善的"},
+      {en:"bless", zh:"祝福"},
+      {en:"blink", zh:"眨眼"},
+      {en:"crawl", zh:"爬"},
+      {en:"flat", zh:"平的"},
+      {en:"follow", zh:"跟隨"},
+      {en:"join", zh:"加入"},
+      {en:"rock", zh:"岩石"},
+      {en:"star", zh:"星星"},
+      {en:"swish", zh:"唰地一聲"}
+  ],
+  16: [
+      {en:"bath", zh:"洗澡"},
+      {en:"bench", zh:"長凳"},
+      {en:"branch", zh:"樹枝"},
+      {en:"brush", zh:"刷子"},
+      {en:"dish", zh:"盤子"},
+      {en:"ditch", zh:"溝渠"},
+      {en:"path", zh:"小徑"},
+      {en:"ring", zh:"戒指"},
+      {en:"swing", zh:"盪鞦韆"},
+      {en:"switch", zh:"開關"},
+      {en:"teeth", zh:"牙齒"},
+      {en:"watch", zh:"手錶"},
+      {en:"bird", zh:"鳥"},
+      {en:"more", zh:"更多"},
+      {en:"shirt", zh:"襯衫"},
+      {en:"horse", zh:"馬"},
+      {en:"first", zh:"第一"},
+      {en:"for", zh:"為了"},
+      {en:"girl", zh:"女孩"},
+      {en:"horn", zh:"角"},
+      {en:"dirt", zh:"泥土"},
+      {en:"short", zh:"短的"},
+      {en:"store", zh:"商店"},
+      {en:"morning", zh:"早晨"},
+      {en:"dinosaur", zh:"恐龍"},
+      {en:"third", zh:"第三"},
+      {en:"whirl", zh:"旋轉"},
+      {en:"appear", zh:"出現"},
+      {en:"decide", zh:"決定"},
+      {en:"furry", zh:"毛茸茸的"},
+      {en:"sister", zh:"姐妹"},
+      {en:"strange", zh:"奇怪的"},
+      {en:"tease", zh:"取笑"}
+  ],
+  17: [
+      {en:"barn", zh:"穀倉"},
+      {en:"card", zh:"卡片"},
+      {en:"dart", zh:"飛鏢"},
+      {en:"fern", zh:"蕨類"},
+      {en:"harp", zh:"豎琴"},
+      {en:"ladder", zh:"梯子"},
+      {en:"letter", zh:"信"},
+      {en:"number", zh:"數字"},
+      {en:"paper", zh:"紙"},
+      {en:"shark", zh:"鯊魚"},
+      {en:"slipper", zh:"拖鞋"},
+      {en:"water", zh:"水"},
+      {en:"yard", zh:"院子"},
+      {en:"flutter", zh:"拍動"},
+      {en:"flyer", zh:"傳單"},
+      {en:"minute", zh:"分鐘"},
+      {en:"nearby", zh:"附近"},
+      {en:"reach", zh:"到達"},
+      {en:"seem", zh:"似乎"},
+      {en:"throat", zh:"喉嚨"},
+      {en:"hummingbird", zh:"蜂鳥"},
+      {en:"afraid", zh:"害怕"},
+      {en:"exclaimed", zh:"驚呼"},
+      {en:"frightened", zh:"害怕的"},
+      {en:"lift", zh:"抬起"},
+      {en:"shut", zh:"關上"},
+      {en:"stretch", zh:"伸展"},
+      {en:"wide", zh:"寬的"}
+  ],
+  18: [
+      {en:"cork", zh:"軟木塞"},
+      {en:"corn", zh:"玉米"},
+      {en:"dirt", zh:"泥土"},
+      {en:"fork", zh:"叉子"},
+      {en:"horn", zh:"角"},
+      {en:"shirt", zh:"襯衫"},
+      {en:"short", zh:"短的"},
+      {en:"skirt", zh:"裙子"},
+      {en:"squirt", zh:"噴出"},
+      {en:"stir", zh:"攪拌"},
+      {en:"storm", zh:"暴風雨"},
+      {en:"third", zh:"第三"},
+      {en:"thorn", zh:"荊棘"},
+      {en:"burn", zh:"燒"},
+      {en:"curb", zh:"路邊"},
+      {en:"curl", zh:"捲曲"},
+      {en:"fur", zh:"毛"},
+      {en:"hurt", zh:"受傷"},
+      {en:"turn", zh:"轉彎"},
+      {en:"does", zh:"做（第三人稱）"},
+      {en:"were", zh:"是（過去式）"},
+      {en:"every", zh:"每個"},
+      {en:"very", zh:"非常"},
+      {en:"give", zh:"給"},
+      {en:"live", zh:"生活"},
+      {en:"thing", zh:"東西"},
+      {en:"your", zh:"你的"},
+      {en:"many", zh:"許多"},
+      {en:"who", zh:"誰"},
+      {en:"any", zh:"任何"},
+      {en:"away", zh:"離開"},
+      {en:"goes", zh:"去（第三人稱）"},
+      {en:"find", zh:"找到"},
+      {en:"kind", zh:"種類 / 好的"},
+      {en:"ago", zh:"以前"},
+      {en:"another", zh:"另一個"},
+      {en:"corner", zh:"角落"},
+      {en:"everywhere", zh:"到處"},
+      {en:"fold", zh:"摺"},
+      {en:"important", zh:"重要的"},
+      {en:"mouse", zh:"老鼠"},
+      {en:"neck", zh:"脖子"},
+      {en:"owl", zh:"貓頭鷹"},
+      {en:"sharp", zh:"銳利的"},
+      {en:"size", zh:"尺寸"},
+      {en:"supper", zh:"晚餐"},
+      {en:"argue", zh:"爭吵"},
+      {en:"bright", zh:"明亮的"},
+      {en:"button", zh:"鈕扣"},
+      {en:"chuckle", zh:"輕笑"},
+      {en:"ladybug", zh:"瓢蟲"},
+      {en:"prettiest", zh:"最漂亮的"},
+      {en:"shout", zh:"叫喊"},
+      {en:"spots", zh:"斑點"},
+      {en:"whole", zh:"整個的"}
+  ],
+  19: []
+}
+;
+// 若 localStorage 有自訂題庫則覆蓋
+let BANKS = getLS("banks", DEFAULT_BANKS);
+// 🧩 自動修復：若 localStorage 題庫缺失或格式錯誤，重置為內建版本
+if (!BANKS || typeof BANKS !== 'object' || !Array.isArray(BANKS[1]) || BANKS[1].length === 0) {
+  console.warn("⚠️ 偵測到舊版或錯誤題庫格式，已自動重置為內建題庫。");
+  localStorage.removeItem(KEY + "_banks");
+  BANKS = DEFAULT_BANKS;
+  setLS("banks", BANKS);
+}
 
-  <script>
-    // IndexedDB for recordings
-    let db;
-    const request = indexedDB.open('PierceRecordings', 1);
-    request.onupgradeneeded = e => {
-      db = e.target.result;
-      db.createObjectStore('recordings');
+
+// === 狀態 ===
+let coins   = getLS("coins", 0);
+let streak  = getLS("streak", 0);
+let wrong   = getLS("wrong", []);
+let bought  = getLS("purchases", {});
+let lastWeek= getLS("lastWeek", 1);
+let current = {week: lastWeek, idx: 0, order: [], random:false};
+let currentWord = null;
+
+// === 元素 ===
+const $ = sel => document.querySelector(sel);
+const coinsEl = $("#coins"), streakEl=$("#streak");
+const weekSel = $("#weekSel"), msgEl=$("#msg"), zhEl=$("#zh"), promptEl=$("#prompt");
+const answer=$("#answer"), btnSubmit=$("#btnSubmit"), btnNext=$("#btnNext"), btnListen=$("#btnListen");
+const btnRules=$("#btnRules"), rules=$("#rules"), closeRules=$("#closeRules"), btnClearWrong=$("#btnClearWrong");
+const btnShowList=$("#btnShowList"), wordList=$("#wordList"), wordListWrap=$("#wordListWrap");
+const btnImportBanks=$("#btnImportBanks");
+
+// === 初始化 ===
+function init(){
+  // 週次（1~18 + 19 錯題）
+  weekSel.innerHTML = "";
+  for(let i=1;i<=18;i++){
+    const opt = document.createElement("option");
+    opt.value = i; opt.textContent = "Week " + i;
+    weekSel.appendChild(opt);
+  }
+  const o19 = document.createElement("option");
+  o19.value = 19; o19.textContent = "Week 19（錯題重練）";
+  weekSel.appendChild(o19);
+  // 若選到空週，預設回到第一個有題目的週
+  if(!Array.isArray(BANKS[lastWeek]) || BANKS[lastWeek].length===0){
+    const firstHas = [...Array(19).keys()].slice(1,19).find(w=>Array.isArray(BANKS[w]) && BANKS[w].length>0) || 1;
+    lastWeek = firstHas; setLS("lastWeek", lastWeek);
+  }
+  weekSel.value = String(lastWeek);
+
+  renderShop();
+  renderWordList(lastWeek);
+  syncHUD();
+  prepareWeek(lastWeek);
+  nextQuestion(true);
+
+  btnSubmit.onclick = submit;
+  btnNext.onclick   = () => nextQuestion();
+  btnListen.onclick = speakCurrent;
+  $("#btnClear").onclick = () => {answer.value="";answer.focus();}
+  weekSel.onchange = () => {
+    current.week = Number(weekSel.value);
+    setLS("lastWeek", current.week);
+    renderWordList(current.week);
+    prepareWeek(current.week);
+    nextQuestion(true);
+  };
+  btnRules.onclick = ()=> rules.classList.add("show");
+  closeRules.onclick = ()=> rules.classList.remove("show");
+  btnClearWrong.onclick = ()=>{
+    wrong = []; setLS("wrong", wrong);
+    alert("已清空錯題。");
+    if(current.week===19){ prepareWeek(19); nextQuestion(true); }
+  };
+  btnShowList.onclick = ()=> wordListWrap.classList.toggle("hide");
+  answer.addEventListener("keydown", e=>{ if(e.key === "Enter"){ submit(); }});
+
+  setupRecorder();
+  applyPurchases();
+  btnImportBanks.onclick = importBanksFlow;
+}
+document.addEventListener("DOMContentLoaded", init);
+
+// === 清單渲染 ===
+function renderWordList(week){
+  const arr = getWeekArray(week);
+  wordList.innerHTML = arr.length? arr.map(w=>(
+    `<div class="word-item"><b>${w.en}</b> — <span class="small">${w.zh||""}</span></div>`
+  )).join("") : `<div class="small">此週尚無題目。</div>`;
+}
+
+// === 週次處理 ===
+function getWeekArray(week){
+  if(week===19) return wrong;
+  return BANKS[week] || [];
+}
+function prepareWeek(week){
+  const arr = getWeekArray(week);
+  current.order = [...arr.keys()];
+  current.random = !!bought.random;
+  if(current.random) shuffle(current.order);
+  current.idx = -1;
+}
+function nextQuestion(reset=false){
+  const arr = getWeekArray(current.week);
+  if(!arr.length){
+    promptEl.textContent = "（本週尚無題目）";
+    zhEl.textContent = "";
+    currentWord = null;
+    return;
+  }
+  if(reset) current.idx = -1;
+  current.idx = (current.idx + 1) % current.order.length;
+  currentWord = arr[current.order[current.idx]];
+  showPrompt(currentWord);
+  speak(currentWord.en);
+  msgEl.textContent = "";
+  answer.value = "";
+  answer.focus();
+}
+function showPrompt(w){
+  promptEl.textContent = "🔈 " + w.en + "（聽音拼字）";
+  zhEl.textContent = "（提交後顯示中文）";
+}
+
+// === TTS ===
+function currentVoiceLang(){ return (bought.voicepack ? "en-GB":"en-US"); }
+function speak(text){
+  try{
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = currentVoiceLang();
+    u.rate = 0.9;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function speakCurrent(){ if(currentWord) speak(currentWord.en); }
+
+// === 作答 ===
+function submit(){
+  if(!currentWord) return;
+  const val = (answer.value||"").trim();
+  if(!val) return;
+  const ok = normalize(val) === normalize(currentWord.en);
+  if(ok){ onCorrect(); } else { onWrong(); }
+}
+function normalize(s){ return s.toLowerCase().replace(/\s+/g," ").trim(); }
+function onCorrect(){
+  streak++; setLS("streak", streak);
+  let add = 1;
+  if(streak>=20) add += 10;
+  else if(streak>=10) add += 5;
+  else if(streak>=5)  add += 3;
+  else if(streak>=3)  add += 1;
+  coins += add; setLS("coins", coins);
+  wrong = wrong.filter(w => normalize(w.en)!==normalize(currentWord.en));
+  setLS("wrong", wrong);
+  if(current.week===19) renderWordList(19);
+  msgEl.innerHTML = `✅ <span class="good">Correct!</span> +${add} 🪙　<span class="small">中文：${currentWord.zh||""}</span>`;
+  zhEl.textContent = "中文：" + (currentWord.zh||"");
+  syncHUD();
+  if(bought.fireworks) boomFireworks();
+  if(bought.sfx) playBeep();
+  setTimeout(()=>nextQuestion(), 900);
+}
+function onWrong(){
+  const exists = wrong.find(w => normalize(w.en)===normalize(currentWord.en));
+  if(!exists) wrong.push({en: currentWord.en, zh: currentWord.zh});
+  setLS("wrong", wrong);
+  streak = 0; setLS("streak", streak);
+  msgEl.innerHTML = `❌ <span class="bad">Wrong.</span>　<span class="small">中文：${currentWord.zh||""}</span>`;
+  zhEl.textContent = "中文：" + (currentWord.zh||"");
+  syncHUD();
+}
+function syncHUD(){ coinsEl.textContent = coins; streakEl.textContent = streak; }
+
+// === 商店 ===
+function renderShop(){
+  document.querySelectorAll(".shop-item").forEach(it=>{
+    const key = it.dataset.key;
+    const price = Number(it.dataset.price||0);
+    const btn = it.querySelector(".buy");
+    const purchased = !!bought[key];
+    it.classList.toggle("purchased", purchased);
+    btn.textContent = purchased ? "已購買" : "購買";
+    btn.onclick = ()=>{
+      if(bought[key]){ alert("已購買。"); return; }
+      if(coins < price){ alert("金幣不足。"); return; }
+      coins -= price; setLS("coins", coins);
+      bought[key] = true; setLS("purchases", bought);
+      renderShop(); applyPurchases(); syncHUD();
     };
-    request.onsuccess = e => { db = e.target.result; };
+  });
+}
+function applyPurchases(){
+  if(bought.coolinput){ $("#answer").classList.add("cool-input"); }
+  else { $("#answer").classList.remove("cool-input"); }
+}
 
-    const audioPlayer = document.getElementById('audioPlayer');
-    const recordBtn = document.getElementById('record');
-    const playBtn = document.getElementById('playRec');
-    let recorder, audioChunks = [], isRecording = false, currentWord = '';
+// === 隨機工具 ===
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }}
 
-    recordBtn.onclick = async () => {
-      if (!isRecording) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        recorder = new MediaRecorder(stream);
-        audioChunks = [];
-        recorder.ondataavailable = e => audioChunks.push(e.data);
-        recorder.onstop = async () => {
-          const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          const tx = db.transaction('recordings', 'readwrite');
-          tx.objectStore('recordings').put(blob, currentWord);
-          alert('✅ 已儲存錄音');
-          const url = URL.createObjectURL(blob);
-          audioPlayer.src = url;
-          audioPlayer.hidden = false;
-          audioPlayer.play();
-          audioPlayer.onended = () => alert('✔️ 播放結束');
-        };
-        recorder.start();
-        recordBtn.textContent = '停止錄音';
-        isRecording = true;
-      } else {
-        recorder.stop();
-        recordBtn.textContent = '錄音';
-        isRecording = false;
-      }
-    };
+// === 煙火 ===
+const fx = document.getElementById("fxCanvas");
+const fctx = fx.getContext("2d");
+function resizeFx(){ fx.width = innerWidth; fx.height = innerHeight; }
+addEventListener("resize", resizeFx); resizeFx();
+let particles=[];
+function boomFireworks(){
+  const cx = Math.random()*fx.width, cy = Math.random()*fx.height*.5 + fx.height*.1;
+  for(let i=0;i<60;i++){
+    const a = Math.random()*Math.PI*2, sp = Math.random()*4+1;
+    particles.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:60});
+  }
+}
+function tick(){
+  fctx.clearRect(0,0,fx.width,fx.height);
+  particles = particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.05; p.life--;
+    fctx.fillStyle = "rgba(0,0,0,.8)";
+    fctx.fillRect(p.x,p.y,2,2);
+  });
+  requestAnimationFrame(tick);
+}
+tick();
 
-    playBtn.onclick = () => {
-      if (!currentWord) { alert('請先出題再錄音'); return; }
-      const tx = db.transaction('recordings', 'readonly');
-      const req = tx.objectStore('recordings').get(currentWord);
-      req.onsuccess = e => {
-        const blob = e.target.result;
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          audioPlayer.src = url;
-          audioPlayer.hidden = false;
-          audioPlayer.play();
-          audioPlayer.onended = () => alert('✔️ 播放結束');
-        } else {
-          alert('尚未錄音');
-        }
+// === 簡單音效 ===
+let audioCtx=null;
+function playBeep(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type="square"; o.frequency.value=880;
+    o.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0.001, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime+0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.20);
+    o.start(); o.stop(audioCtx.currentTime+0.22);
+  }catch(e){}
+}
+
+// === IndexedDB 錄音 ===
+let mediaRecorder, recChunks=[], db;
+async function setupRecorder(){
+  db = await openDB("SB_REC_DB",1, db=>{
+    const s = db.createObjectStore("recs");
+    s.createIndex("k","k",{unique:true});
+  });
+  $("#recStart").onclick = async ()=>{
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      mediaRecorder = new MediaRecorder(stream);
+      recChunks = [];
+      mediaRecorder.ondataavailable = e=> recChunks.push(e.data);
+      mediaRecorder.onstop = async ()=>{
+        if(!currentWord) return;
+        const blob = new Blob(recChunks,{type:"audio/webm"});
+        await putRec(currentWord.en, blob);
+        alert("已保存錄音（離線可用）");
       };
-    };
-  </script>
+      mediaRecorder.start();
+    }catch(e){ alert("需要麥克風權限"); }
+  };
+  $("#recStop").onclick = ()=>{ try{ mediaRecorder && mediaRecorder.stop(); }catch(e){} };
+  $("#recPlay").onclick = async ()=>{
+    if(!currentWord) return;
+    const blob = await getRec(currentWord.en);
+    if(!blob){ alert("尚未錄音"); return; }
+    const url = URL.createObjectURL(blob);
+    const a = new Audio(url); a.play();
+  };
+}
+function openDB(name, ver, upgrade){
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open(name,ver);
+    req.onupgradeneeded = e=> upgrade && upgrade(e.target.result);
+    req.onerror = ()=> rej(req.error);
+    req.onsuccess = ()=> res(req.result);
+  });
+}
+function putRec(k, blob){
+  return new Promise((res,rej)=>{
+    const tx = db.transaction("recs","readwrite");
+    tx.objectStore("recs").put(blob, "rec:"+k);
+    tx.oncomplete = ()=> res(true);
+    tx.onerror = ()=> rej(tx.error);
+  });
+}
+function getRec(k){
+  return new Promise((res,rej)=>{
+    const tx = db.transaction("recs","readonly");
+    const req = tx.objectStore("recs").get("rec:"+k);
+    req.onsuccess = ()=> res(req.result||null);
+    req.onerror = ()=> rej(req.error);
+  });
+}
+
+// === 匯入題庫（JSON） ===
+async function importBanksFlow(){
+  const example = JSON.stringify(DEFAULT_BANKS, null, 2);
+  const text = prompt(
+`請貼上完整「Week 1～18」題庫 JSON（格式如下）：
+{ "1":[ {"en":"bank","zh":"銀行"}, ... ], "2":[ ... ], ... "18":[ ... ] }
+
+目前格式參考：` + example.substring(0,280) + `...`
+  );
+  if(!text) return;
+  try{
+    const obj = JSON.parse(text);
+    for(let i=1;i<=18;i++){
+      if(!Array.isArray(obj[i])) obj[i]=[];
+      obj[i] = obj[i].map(x=>({en:String(x.en||""), zh:String(x.zh||"")}))
+                     .filter(x=>x.en.trim().length>0);
+    }
+    obj[19] = wrong;
+    BANKS = obj;
+    setLS("banks", BANKS);
+    alert("題庫已更新並保存。");
+    renderWordList(current.week);
+    prepareWeek(current.week);
+    nextQuestion(true);
+  }catch(e){
+    alert("JSON 解析失敗，請確認格式。");
+  }
+}
+</script>
 </body>
 </html>
